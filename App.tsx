@@ -22,6 +22,7 @@ import { adminSignIn, adminSignUp, adminSignInWithGoogle } from './services/fire
 import UsageLimitModal from './components/billing/UsageLimitModal';
 import AISandbox from './components/AISandbox';
 import AIChatPanel from './components/AIChatPanel';
+import { stripeService } from './services/stripeService';
 
 const DEMO_LEADS: Lead[] = [
   {
@@ -171,6 +172,7 @@ const App: React.FC = () => {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const [isCompactView, setIsCompactView] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [editorView, setEditorView] = useState<'preview' | 'code'>('preview');
 
   // New AI Editor State (Vibe Coder - HTML-based)
@@ -309,9 +311,11 @@ const App: React.FC = () => {
   }, [isAuthenticated, step]);
 
   const stats = useMemo(() => {
-    const revenue = leads.filter(l => l.status === 'Paid').reduce((acc, curr) => acc + (curr.projectValue || 0), 0);
-    const mrr = leads.filter(l => l.status === 'Paid').reduce((acc, curr) => acc + (curr.monthlyValue || 0), 0);
-    const siteGenCost = leads.length * INFRA_COST_PER_SITE;
+    // Filter out archived leads for all statistics
+    const activeLeadsForStats = leads.filter(l => !l.archived);
+    const revenue = activeLeadsForStats.filter(l => l.status === 'Paid').reduce((acc, curr) => acc + (curr.projectValue || 0), 0);
+    const mrr = activeLeadsForStats.filter(l => l.status === 'Paid').reduce((acc, curr) => acc + (curr.monthlyValue || 0), 0);
+    const siteGenCost = activeLeadsForStats.length * INFRA_COST_PER_SITE;
     const editCost = totalEditsMade * INFRA_COST_PER_EDIT;
     const totalInfraCost = siteGenCost + editCost;
     const netProfit = revenue - totalInfraCost;
@@ -322,7 +326,7 @@ const App: React.FC = () => {
       mrr,
       totalInfraCost,
       netProfit,
-      activeLeads: leads.length,
+      activeLeads: activeLeadsForStats.length,
       margin,
       siteGenCost,
       editCost
@@ -937,6 +941,22 @@ const App: React.FC = () => {
     if (window.confirm("Are you sure? This will wipe the business data, demo website, and hosting records from the platform permanently.")) {
       setLeads(prev => prev.filter(l => l.id !== leadId));
     }
+  };
+
+  const handleArchiveLead = (leadId: string) => {
+    setLeads(prev => prev.map(l =>
+      l.id === leadId
+        ? { ...l, archived: true, archivedAt: new Date().toISOString() }
+        : l
+    ));
+  };
+
+  const handleUnarchiveLead = (leadId: string) => {
+    setLeads(prev => prev.map(l =>
+      l.id === leadId
+        ? { ...l, archived: false, archivedAt: undefined }
+        : l
+    ));
   };
 
   const handleLogout = () => {
@@ -3235,8 +3255,18 @@ const App: React.FC = () => {
                     className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6"
                   >
                     <div>
-                      <h1 className="text-5xl font-bold headline-font">Active <span className="headline-serif italic font-normal text-[var(--accent-pink)]">Portfolio</span></h1>
-                      <p className="text-[#6B6478] font-medium text-xs font-black mt-2">Managing {leads.length} clients</p>
+                      <h1 className="text-5xl font-bold headline-font">{showArchived ? 'Archived' : 'Active'} <span className="headline-serif italic font-normal text-[var(--accent-pink)]">Portfolio</span></h1>
+                      <p className="text-[#6B6478] font-medium text-xs font-black mt-2">
+                        Managing {leads.filter(l => !l.archived).length} active clients
+                        {leads.filter(l => l.archived).length > 0 && (
+                          <button
+                            onClick={() => setShowArchived(!showArchived)}
+                            className="ml-2 text-[#9B8CF7] hover:underline"
+                          >
+                            {showArchived ? 'Show Active' : `View Archived (${leads.filter(l => l.archived).length})`}
+                          </button>
+                        )}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <button
@@ -3268,7 +3298,7 @@ const App: React.FC = () => {
                   </motion.div>
 
                   <div className={`${isCompactView ? 'grid gap-4' : 'grid gap-8'}`}>
-                    {leads.map((lead, index) => (
+                    {leads.filter(l => showArchived ? l.archived : !l.archived).map((lead, index) => (
                       <motion.div
                         key={lead.id}
                         layout
@@ -3304,6 +3334,15 @@ const App: React.FC = () => {
                           {isCompactView && (
                             <div className="flex items-center gap-2">
                               <button onClick={() => { setBlueprint(lead.blueprint!); setBlueprintHistory([lead.blueprint!]); setEditingLeadId(lead.id); setStep(WizardStep.EDIT_WEBSITE); }} className="px-4 py-2 bg-[var(--accent-pink-soft)] rounded-lg text-xs font-medium text-[var(--accent-pink)] hover:bg-[var(--accent-pink)] hover:text-white transition-colors">Edit ✨</button>
+                              {lead.archived ? (
+                                <button onClick={() => handleUnarchiveLead(lead.id)} className="px-4 py-2 bg-[#9B8CF7]/10 rounded-lg text-xs font-medium text-[#9B8CF7] hover:bg-[#9B8CF7] hover:text-white transition-all flex items-center gap-1">
+                                  <Icons.ArchiveRestore size={14} /> Restore
+                                </button>
+                              ) : (
+                                <button onClick={() => handleArchiveLead(lead.id)} className="px-4 py-2 bg-amber-500/10 rounded-lg text-xs font-medium text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-1">
+                                  <Icons.Archive size={14} /> Archive
+                                </button>
+                              )}
                               <button onClick={() => handleDeleteLead(lead.id)} className="px-4 py-2 bg-red-500/10 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500 hover:text-white transition-all">Delete</button>
                             </div>
                           )}
@@ -3582,10 +3621,38 @@ const App: React.FC = () => {
                           <button onClick={() => setStep(WizardStep.EARNINGS)} className="w-full py-3 px-6 bg-[#9B8CF7] text-white rounded-xl font-semibold text-sm hover:bg-[#8B5CF6] transition-colors">
                             Upgrade Plan
                           </button>
-                          <button className="w-full py-3 px-6 bg-transparent border border-[#9B8CF7]/30 text-[#6B6478] rounded-xl font-medium text-sm hover:border-[#9B8CF7] hover:text-[#9B8CF7] transition-colors">
-                            View All Plans
+                          <button
+                            onClick={async () => {
+                              try {
+                                await stripeService.openBillingPortal(window.location.href);
+                              } catch (error) {
+                                console.error('Failed to open billing portal:', error);
+                                alert('Unable to open billing portal. Please try again.');
+                              }
+                            }}
+                            className="w-full py-3 px-6 bg-transparent border border-[#9B8CF7]/30 text-[#6B6478] rounded-xl font-medium text-sm hover:border-[#9B8CF7] hover:text-[#9B8CF7] transition-colors"
+                          >
+                            Manage Subscription
                           </button>
-                          <button className="w-full py-2 px-6 text-red-400 text-xs font-medium hover:text-red-500 transition-colors">
+                          <button
+                            onClick={async () => {
+                              const confirmed = window.confirm(
+                                'Are you sure you want to cancel your subscription? You will retain access until the end of your current billing period.'
+                              );
+                              if (confirmed) {
+                                try {
+                                  const result = await stripeService.cancelSubscription();
+                                  if (result.success) {
+                                    alert(`Subscription cancelled. You have access until ${new Date(result.endsAt).toLocaleDateString()}.`);
+                                  }
+                                } catch (error) {
+                                  console.error('Failed to cancel subscription:', error);
+                                  alert('Unable to cancel subscription. Please try again or contact support.');
+                                }
+                              }
+                            }}
+                            className="w-full py-2 px-6 text-red-400 text-xs font-medium hover:text-red-500 transition-colors"
+                          >
                             Cancel Plan
                           </button>
                         </div>
