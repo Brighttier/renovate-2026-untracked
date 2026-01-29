@@ -1,0 +1,7 @@
+{
+  "name": "RENOVATEMYSITE - Website Builder Wizard",
+  "description": "A non-technical platform to find local businesses, generate AI websites for them, and manage outreach proposals.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

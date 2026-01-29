@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "providerId": "renovatemysite.app",
+  "providerName": "RenovateMySite",
+  "serviceId": "firebase-hosting",
+  "serviceName": "Firebase Hosting",
+  "version": 1,
+  "logoUrl": "https://renovatemysite-app.web.app/logo.png",
+  "description": "Connect your domain to Firebase Hosting for RenovateMySite websites",
+  "variableDescription": "This template configures your domain to point to Firebase Hosting.",
+  "syncPubKeyDomain": "renovatemysite.app",
+  "syncRedirectDomain": "renovatemysite-app.web.app",
+  "warnPhishing": true,
+  "records": [
+    {
+      "type": "A",
+      "host": "@",
+      "pointsTo": "199.36.158.100",
+      "ttl": 600
+    },
+    {
+      "type": "A",
+      "host": "@",
+      "pointsTo": "151.101.1.195",
+      "ttl": 600
+    },
+    {
+      "type": "CNAME",
+      "host": "www",
+      "pointsTo": "@",
+      "ttl": 600
+    }
+  ]
+}

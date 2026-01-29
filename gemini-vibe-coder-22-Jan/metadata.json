@@ -1,0 +1,7 @@
+{
+  "name": "Gemini Vibe Coder",
+  "description": "A real-time AI website builder that uses Gemini 3 Pro to generate and iterate on enterprise-grade web designs with a live preview sandbox.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

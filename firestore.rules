@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Helper function to check admin role level
+    function hasAdminRole(roles) {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in roles;
+    }
+
+    // Admins collection - only super_admin and admin can read/write
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow read, write: if hasAdminRole(['super_admin', 'admin']);
+    }
+
+    // Agencies collection - admins can read all, agencies can read/write own
+    match /agencies/{agencyId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null &&
+        (request.auth.uid == resource.data.ownerId || isAdmin());
+
+      // Leads subcollection
+      match /leads/{leadId} {
+        allow read, write: if request.auth != null &&
+          (get(/databases/$(database)/documents/agencies/$(agencyId)).data.ownerId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // API Keys - admin only
+    match /apiKeys/{keyId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Webhooks - admin only
+    match /webhooks/{webhookId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Webhook Deliveries - admin only
+    match /webhookDeliveries/{deliveryId} {
+      allow read: if isAdmin();
+      allow create: if true; // System can create deliveries
+    }
+
+    // Audit Logs - admin can read, anyone authenticated can create
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null;
+    }
+
+    // Platform Config - general settings readable by authenticated users, writable by admin
+    match /config/{docId} {
+      // GoDaddy credentials - NEVER accessible from client (only via Cloud Functions)
+      allow read, write: if docId != 'godaddyCredentials' && request.auth != null;
+      allow write: if docId != 'godaddyCredentials' && isAdmin();
+    }
+
+    // GoDaddy credentials - completely blocked from client access
+    // These are ONLY accessed by Cloud Functions on the server
+    match /config/godaddyCredentials {
+      allow read, write: if false;
+    }
+
+    // AI Usage tracking - admin can read, anyone authenticated can create
+    match /aiUsage/{usageId} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null;
+    }
+
+    // Invite codes - for waitlist/invite gate
+    match /inviteCodes/{codeId} {
+      allow read: if true; // Anyone can check if code is valid
+      allow write: if isAdmin();
+    }
+
+    // Waitlist entries
+    match /waitlist/{entryId} {
+      allow read: if isAdmin();
+      allow create: if true; // Anyone can join waitlist
+    }
+
+    // Preview deployments - public read, authenticated write
+    match /preview_deployments/{previewId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Preview sites (HTML backup) - public read, authenticated write
+    match /preview_sites/{previewId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Beta feedback - authenticated users can create/read, admins can update
+    match /beta_feedback/{feedbackId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if isAdmin();
+    }
+
+    // Domain connections - agency owners and admins can access their connections
+    // This collection tracks custom domain setup for Firebase Hosting
+    match /domain_connections/{domainId} {
+      // Read: Owner of the domain connection or admin
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+
+      // Create: Any authenticated user can create
+      allow create: if request.auth != null;
+
+      // Update: Owner or admin can update
+      allow update: if request.auth != null && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+
+    // Subscriptions - users can read their own, admins can read all
+    match /subscriptions/{subscriptionId} {
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow write: if isAdmin();
+    }
+
+    // User tour status - users can read/write their own tour progress
+    match /user_tour_status/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

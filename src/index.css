@@ -1,0 +1,989 @@
+/* Google Fonts - Montserrat for headlines (HoneyBook style) + Inter for body */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* Color System - Calm Lavender Theme */
+:root {
+  /* Primary Lavender Colors */
+  --lavender: #9B8CF7;
+  --lavender-light: #C4B5FD;
+  --lavender-dark: #8B5CF6;
+  --lavender-soft: #EDE9FE;
+  --lavender-bg: #F5F3FF;
+  --navy: #1E1B4B;
+  --navy-light: #312E81;
+  --white: #FFFFFF;
+  --gray: #E5E7EB;
+  --text-secondary: #6B7280;
+  --error: #EF4444;
+  --focus: #6366F1;
+  --pink: #FCE7F3;
+  --beige: #FEF3C7;
+  --light-gray: #F9FAFB;
+
+  /* Pink/Blush Accent - Secondary Color */
+  --accent-pink: #F9A8D4;
+  --accent-pink-light: #FBCFE8;
+  --accent-pink-soft: #FDF2F8;
+  --accent-pink-glow: rgba(249, 168, 212, 0.3);
+
+  /* Light theme (DEFAULT) */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F9FAFB;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-header: rgba(255, 255, 255, 0.98);
+  --text-primary: #1E1B4B;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --accent-primary: #9B8CF7;
+  --accent-hover: #8B5CF6;
+  --accent-light: rgba(167, 139, 250, 0.15);
+  --border-color: rgba(167, 139, 250, 0.2);
+  --border-color-hover: rgba(167, 139, 250, 0.4);
+  --scrollbar-thumb: #C4B5FD;
+  --shadow-color: rgba(30, 27, 75, 0.035);
+}
+
+/* Light mode only - dark mode removed */
+.light-mode {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F9FAFB;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-header: rgba(255, 255, 255, 0.98);
+  --text-primary: #1E1B4B;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --accent-primary: #9B8CF7;
+  --accent-hover: #8B5CF6;
+  --accent-light: rgba(167, 139, 250, 0.15);
+  --border-color: rgba(167, 139, 250, 0.2);
+  --border-color-hover: rgba(167, 139, 250, 0.4);
+  --scrollbar-thumb: #C4B5FD;
+  --shadow-color: rgba(30, 27, 75, 0.035);
+  /* Pink accent inherits from :root */
+  --accent-pink: #F9A8D4;
+  --accent-pink-light: #FBCFE8;
+  --accent-pink-soft: #FDF2F8;
+  --accent-pink-glow: rgba(249, 168, 212, 0.3);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, #F5F3FF 0%, #F8F7FF 15%, #FAFAFF 35%, #FFFFFF 55%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: var(--text-primary);
+  overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Landing page uses the same gradient as rest of site */
+
+/* Premium font - Montserrat for headlines */
+.premium-font,
+.headline-font {
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Large serif headlines (editorial style) */
+.headline-serif {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
+   GLOSSY TEXT EFFECTS
+   ============================================ */
+
+/* Glossy text utility class */
+.glossy-text {
+  background: linear-gradient(
+    180deg,
+    currentColor 0%,
+    currentColor 40%,
+    rgba(255, 255, 255, 0.4) 50%,
+    currentColor 60%,
+    currentColor 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  position: relative;
+}
+
+/* Glossy text with shine highlight */
+.glossy-text-shine {
+  position: relative;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4),
+    0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Auto-apply glossy effect to large headings - ENHANCED 3D GLOSSY */
+h1, .text-5xl, .text-6xl, .text-7xl {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.6),
+    0 -1px 0 rgba(0, 0, 0, 0.05),
+    0 4px 8px rgba(30, 27, 75, 0.18),
+    0 8px 16px rgba(30, 27, 75, 0.08);
+}
+
+h2, .text-4xl {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5),
+    0 -1px 0 rgba(0, 0, 0, 0.03),
+    0 3px 6px rgba(30, 27, 75, 0.15),
+    0 6px 12px rgba(30, 27, 75, 0.06);
+}
+
+h3, .text-3xl, .text-2xl {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 4px rgba(30, 27, 75, 0.12),
+    0 4px 8px rgba(30, 27, 75, 0.05);
+}
+
+/* Glossy effect for headline-font class - PREMIUM 3D EFFECT */
+.headline-font {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.6),
+    0 -1px 0 rgba(0, 0, 0, 0.05),
+    0 4px 8px rgba(30, 27, 75, 0.18),
+    0 8px 16px rgba(30, 27, 75, 0.08);
+}
+
+/* Enhanced glossy for dark navy text on light backgrounds */
+.text-navy-glossy,
+.glossy-navy {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.55),
+    0 4px 8px rgba(30, 27, 75, 0.2),
+    0 8px 16px rgba(30, 27, 75, 0.1);
+}
+
+/* Glossy effect for lavender/purple text - ITALIC SERIF STYLE */
+.text-lavender-glossy,
+.glossy-lavender {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5),
+    0 3px 6px rgba(155, 140, 247, 0.4),
+    0 6px 12px rgba(155, 140, 247, 0.2);
+}
+
+/* Glossy effect for pink accent text */
+.text-pink-glossy,
+.glossy-pink-text {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5),
+    0 3px 6px rgba(249, 168, 212, 0.4),
+    0 6px 12px rgba(249, 168, 212, 0.2);
+}
+
+/* Glossy effect for white text (on dark backgrounds) */
+.text-white {
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 0 30px rgba(255, 255, 255, 0.15);
+}
+
+/* Gradient text with glossy shine */
+.gradient-text-glossy {
+  background: linear-gradient(
+    135deg,
+    #B8A9FF 0%,
+    #9B8CF7 25%,
+    #C4B5FD 50%,
+    #9B8CF7 75%,
+    #8B5CF6 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 3px 6px rgba(155, 140, 247, 0.4));
+}
+
+/* Gradient text with pink shine */
+.gradient-text-pink-glossy {
+  background: linear-gradient(
+    135deg,
+    #FBCFE8 0%,
+    #F9A8D4 25%,
+    #FDF2F8 50%,
+    #F9A8D4 75%,
+    #EC4899 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 3px 6px rgba(249, 168, 212, 0.4));
+}
+
+/* Italic serif text with elegant glossy effect - "Build For" style */
+.headline-serif {
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5),
+    0 3px 6px rgba(155, 140, 247, 0.35),
+    0 6px 12px rgba(155, 140, 247, 0.15);
+}
+
+/* Theme-aware utility classes */
+.theme-bg-primary { background-color: var(--bg-primary); }
+.theme-bg-secondary { background-color: var(--bg-secondary); }
+.theme-bg-tertiary { background-color: var(--bg-tertiary); }
+.theme-bg-card { background-color: var(--bg-card); }
+.theme-bg-header { background-color: var(--bg-header); }
+.theme-text-primary { color: var(--text-primary); }
+.theme-text-secondary { color: var(--text-secondary); }
+.theme-text-muted { color: var(--text-muted); }
+.theme-border { border-color: var(--border-color); }
+.theme-accent { color: var(--accent-primary); }
+.theme-accent-bg { background-color: var(--accent-primary); }
+
+/* Section Backgrounds */
+.bg-lavender { background-color: #F5F3FF; }
+.bg-lavender-soft { background-color: #EDE9FE; }
+.bg-navy { background-color: #1E1B4B; }
+.bg-pink { background-color: #FCE7F3; }
+.bg-beige { background-color: #FEF3C7; }
+.bg-white { background-color: #FFFFFF; }
+.bg-light { background-color: #F9FAFB; }
+
+/* Text colors for sections */
+.text-navy { color: #1E1B4B; }
+.text-white { color: #FFFFFF; }
+.text-gray { color: #6B7280; }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+/* Subtle float animation */
+@keyframes subtle-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+.float-animation {
+  animation: subtle-float 6s ease-in-out infinite;
+}
+
+/* Subtle pulse animation for CTA buttons */
+@keyframes pulse-subtle {
+  0%, 100% {
+    box-shadow: 0 10px 25px -5px rgba(155, 140, 247, 0.3), 0 8px 10px -6px rgba(155, 140, 247, 0.2);
+  }
+  50% {
+    box-shadow: 0 15px 35px -5px rgba(155, 140, 247, 0.45), 0 12px 15px -6px rgba(155, 140, 247, 0.3);
+  }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* Theme toggle button animation */
+.theme-toggle-btn {
+  transition: transform 0.3s ease, background-color 0.4s ease;
+}
+.theme-toggle-btn:hover {
+  transform: scale(1.05);
+}
+.theme-toggle-btn:active {
+  transform: scale(0.98);
+}
+
+/* Button System - Glossy Style */
+.hb-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 32px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  transition: color 0.7s cubic-bezier(0.625, 0.05, 0, 1), transform 0.15s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  /* Glossy inner shadow */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.hb-btn:hover {
+  transform: scale(1.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.15);
+}
+.hb-btn:active {
+  transform: scale(0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Circle reveal effect */
+.hb-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 0;
+}
+
+.hb-btn:hover::before {
+  transform: translate(-50%, -50%) scale(2.5);
+}
+
+/* Glossy shine overlay */
+.hb-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-radius: 100px 100px 50% 50%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hb-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Navy button with lavender circle reveal */
+.hb-btn-navy {
+  background: linear-gradient(180deg, #2D2A5E 0%, #1E1B4B 100%);
+  color: #FFFFFF;
+}
+.hb-btn-navy::before {
+  background-color: #9B8CF7;
+}
+.hb-btn-navy:hover {
+  color: #1E1B4B;
+}
+
+/* Lavender button with navy circle reveal */
+.hb-btn-lavender {
+  background: linear-gradient(180deg, #B8A9FF 0%, #9B8CF7 100%);
+  color: #FFFFFF;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(139, 92, 246, 0.3),
+    0 2px 8px rgba(155, 140, 247, 0.3);
+}
+.hb-btn-lavender:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(139, 92, 246, 0.4),
+    0 6px 20px rgba(155, 140, 247, 0.4);
+}
+.hb-btn-lavender::before {
+  background-color: #1E1B4B;
+}
+.hb-btn-lavender:hover {
+  color: #FFFFFF;
+}
+
+/* Outline button */
+.hb-btn-outline {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+  color: #1E1B4B;
+  border: 2px solid #1E1B4B;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.hb-btn-outline::before {
+  background-color: #1E1B4B;
+}
+.hb-btn-outline:hover {
+  color: #FFFFFF;
+}
+
+/* White button */
+.hb-btn-white {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%);
+  color: #1E1B4B;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.hb-btn-white::before {
+  background-color: #1E1B4B;
+}
+.hb-btn-white:hover {
+  color: #FFFFFF;
+}
+
+/* Button hover lift */
+.btn-hover-lift {
+  transition: all 0.7s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(30, 27, 75, 0.15);
+}
+
+/* Global glossy button utility class */
+.glossy-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.glossy-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+.glossy-btn:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Glossy gradient buttons (pink/lavender) */
+.glossy-gradient {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+    0 4px 15px rgba(155, 140, 247, 0.3);
+}
+.glossy-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+.glossy-gradient:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.15),
+    0 8px 25px rgba(155, 140, 247, 0.4);
+}
+
+/* Glossy pink accent button */
+.glossy-pink {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(249, 168, 212, 0.3),
+    0 4px 15px rgba(249, 168, 212, 0.25);
+}
+.glossy-pink::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+}
+.glossy-pink:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(249, 168, 212, 0.4),
+    0 8px 25px rgba(249, 168, 212, 0.35);
+}
+
+/* Standard button glossy effect - applies to rounded-full buttons */
+button[class*="rounded-full"][class*="bg-"],
+button[class*="rounded-xl"][class*="bg-"],
+button[class*="rounded-2xl"][class*="bg-"],
+button[class*="rounded-3xl"][class*="bg-"] {
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+button[class*="rounded-full"][class*="bg-"]:hover,
+button[class*="rounded-xl"][class*="bg-"]:hover,
+button[class*="rounded-2xl"][class*="bg-"]:hover,
+button[class*="rounded-3xl"][class*="bg-"]:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Gradient button glossy enhancement */
+button[class*="bg-gradient"],
+div[class*="bg-gradient"] button,
+a[class*="bg-gradient"] {
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+    0 4px 15px rgba(155, 140, 247, 0.25);
+}
+button[class*="bg-gradient"]:hover,
+a[class*="bg-gradient"]:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.15),
+    0 8px 25px rgba(155, 140, 247, 0.35);
+}
+
+/* Lavender/Purple background buttons */
+button[class*="bg-[#9B8CF7]"],
+button[class*="bg-\\[\\#9B8CF7\\]"],
+.bg-lavender-btn {
+  background: linear-gradient(180deg, #B8A9FF 0%, #9B8CF7 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(139, 92, 246, 0.2),
+    0 4px 12px rgba(155, 140, 247, 0.3) !important;
+}
+button[class*="bg-[#9B8CF7]"]:hover,
+button[class*="bg-\\[\\#9B8CF7\\]"]:hover,
+.bg-lavender-btn:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(139, 92, 246, 0.3),
+    0 8px 20px rgba(155, 140, 247, 0.4) !important;
+}
+
+/* White/Light background buttons */
+button[class*="bg-white"],
+button[class*="bg-\\[\\#F5F3FF\\]"],
+button[class*="bg-\\[\\#EDE9FE\\]"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+}
+button[class*="bg-white"]:hover,
+button[class*="bg-\\[\\#F5F3FF\\]"]:hover,
+button[class*="bg-\\[\\#EDE9FE\\]"]:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
+    0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Gentle fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.625, 0.05, 0, 1) forwards;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.card-hover:hover {
+  box-shadow: 0 10px 30px -10px rgba(30, 27, 75, 0.1);
+}
+
+/* Card Shadow */
+.hb-card-shadow {
+  box-shadow: 0 5px 5px 0 rgba(30, 27, 75, 0.035);
+}
+.hb-card-shadow-hover:hover {
+  box-shadow: 0 10px 20px 0 rgba(30, 27, 75, 0.1);
+}
+
+/* Gradient text - Lavender */
+.gradient-text-lavender {
+  background: linear-gradient(135deg, #9B8CF7 0%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Focus states */
+.focus-lavender:focus {
+  outline: 0.125rem solid #6366F1;
+  outline-offset: 0.125rem;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.7s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+/* Navigation timing */
+.transition-nav {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Link underline animation */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent-primary);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.735s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Nav link with pill-shaped hover */
+.nav-link-reveal {
+  position: relative;
+  overflow: hidden;
+  padding: 8px 20px;
+  border-radius: 100px;
+  transition: color 0.7s cubic-bezier(0.625, 0.05, 0, 1);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.nav-link-reveal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 100px;
+  background-color: rgba(155, 140, 247, 0.15);
+  transform: scale(0);
+  transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 0;
+}
+
+.nav-link-reveal:hover::before {
+  transform: scale(1);
+}
+
+.nav-link-reveal span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Learn more link with arrow */
+.learn-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: gap 0.3s ease;
+}
+.learn-more-link:hover {
+  gap: 12px;
+}
+.learn-more-link svg {
+  transition: transform 0.3s ease;
+}
+.learn-more-link:hover svg {
+  transform: translateX(4px);
+}
+
+/* Confetti pattern for promo banner */
+.confetti-pattern {
+  background-image:
+    radial-gradient(circle at 10% 20%, #F472B6 2px, transparent 2px),
+    radial-gradient(circle at 30% 70%, #34D399 2px, transparent 2px),
+    radial-gradient(circle at 50% 30%, #FBBF24 2px, transparent 2px),
+    radial-gradient(circle at 70% 80%, #9B8CF7 2px, transparent 2px),
+    radial-gradient(circle at 90% 40%, #EC4899 2px, transparent 2px),
+    radial-gradient(circle at 20% 90%, #60A5FA 2px, transparent 2px),
+    radial-gradient(circle at 60% 10%, #F97316 2px, transparent 2px),
+    radial-gradient(circle at 80% 60%, #8B5CF6 2px, transparent 2px);
+  background-size: 100% 100%;
+}
+
+/* Tilted card animation */
+@keyframes tiltIn {
+  from {
+    opacity: 0;
+    transform: perspective(1000px) rotateY(-15deg) translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1000px) rotateY(-5deg) translateX(0);
+  }
+}
+
+.tilt-card {
+  transform: perspective(1000px) rotateY(-5deg);
+  transition: transform 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.tilt-card:hover {
+  transform: perspective(1000px) rotateY(0deg) scale(1.02);
+}
+
+/* Float card with shadow */
+.float-card {
+  box-shadow:
+    0 20px 60px -15px rgba(30, 27, 75, 0.15),
+    0 10px 20px -10px rgba(30, 27, 75, 0.1);
+  transition: all 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+.float-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 30px 80px -20px rgba(30, 27, 75, 0.2),
+    0 15px 30px -15px rgba(30, 27, 75, 0.15);
+}
+
+/* Scroll reveal animations */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(40px);
+}
+.reveal-up.revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+.reveal-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.reveal-right.revealed {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.9);
+}
+.reveal-scale.revealed {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+/* Large statistics numbers */
+.stat-number {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* Badge/pill styling */
+.hb-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Image aspect ratios */
+.aspect-hb-desktop { aspect-ratio: 4/3; }
+.aspect-hb-mobile { aspect-ratio: 1/1; }
+.aspect-hb-portrait { aspect-ratio: 446/595; }
+
+/* Border radius values */
+.rounded-hb { border-radius: 20px; }
+.rounded-hb-sm { border-radius: 10px; }
+.rounded-hb-full { border-radius: 100px; }
+
+/* ============================================
+   PINK ACCENT UTILITIES
+   ============================================ */
+
+/* Pink accent backgrounds */
+.bg-accent-pink { background-color: var(--accent-pink); }
+.bg-accent-pink-light { background-color: var(--accent-pink-light); }
+.bg-accent-pink-soft { background-color: var(--accent-pink-soft); }
+
+/* Pink accent text */
+.text-accent-pink { color: var(--accent-pink); }
+
+/* Pink accent border */
+.border-accent-pink { border-color: var(--accent-pink); }
+
+/* Pink glow effect */
+.glow-pink {
+  box-shadow: 0 0 20px var(--accent-pink-glow), 0 0 40px var(--accent-pink-glow);
+}
+
+/* Pink gradient highlight (for progress bars) */
+.progress-glow {
+  position: relative;
+}
+.progress-glow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: var(--accent-pink);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--accent-pink-glow), 0 0 24px var(--accent-pink-glow);
+  opacity: 0.9;
+}
+
+/* ============================================
+   MICRO-INTERACTIONS
+   ============================================ */
+
+/* Button hover/tap interactions */
+.btn-interact {
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.btn-interact:hover {
+  transform: scale(1.02);
+}
+.btn-interact:active {
+  transform: scale(0.98);
+}
+
+/* Card hover lift effect */
+.card-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 27, 75, 0.08), 0 4px 10px rgba(155, 140, 247, 0.1);
+}
+
+/* Subtle scale on hover */
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Pink badge/pill style */
+.badge-pink {
+  background: linear-gradient(135deg, var(--accent-pink-soft) 0%, var(--accent-pink-light) 100%);
+  color: #9D174D;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--accent-pink);
+}
+
+/* Gray badge/pill style for disabled/unavailable items */
+.badge-gray {
+  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  color: #6B7280;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #D1D5DB;
+}
+
+/* Lavender to pink gradient text */
+.gradient-text-pink {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-pink) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pink sparkle accent (for icons) */
+.sparkle-pink {
+  color: var(--accent-pink);
+  filter: drop-shadow(0 0 4px var(--accent-pink-glow));
+}
