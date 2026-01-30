@@ -1,7 +1,7 @@
 import { WaitlistStats, WaitlistEntry, WaitlistSettings } from "../types";
 
 // Cloud Functions base URL
-const FUNCTIONS_BASE_URL = 'https://us-central1-renovatemysite-app.cloudfunctions.net';
+const FUNCTIONS_BASE_URL = 'https://us-central1-renovatemysite-vibe.cloudfunctions.net';
 
 // ==========================================
 // PUBLIC FUNCTIONS (No auth required)

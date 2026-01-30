@@ -8,7 +8,8 @@
  * - Builds UniversalBusinessDNA object
  */
 
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import type {
   UniversalBusinessDNA,
   SemanticPage,
@@ -753,10 +754,11 @@ export async function exhaustiveScrapeSite(
   let browser: puppeteer.Browser | null = null;
 
   try {
-    // Launch browser
+    // Launch browser with Chromium for Cloud Functions
     browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: [...chromium.args, '--disable-gpu', '--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--disable-dev-shm-usage'],
+      executablePath: await chromium.executablePath('/tmp'),
+      headless: true
     });
 
     const page = await browser.newPage();

@@ -1677,7 +1677,7 @@ async function analyzeVisualVibe(page: Page): Promise<{ vibe: string; screenshot
         }) as string;
 
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const prompt = `Analyze this website screenshot and describe the brand's visual "vibe" in 2-3 sentences.
 
@@ -1741,9 +1741,9 @@ export async function deepScrapeSite(
     console.log(`[DeepScraper] Config: maxPages=${maxPages}, maxDepth=${maxDepth}, visionOCR=${enableVisionOCR}, visionColors=${enableVisionColors}`);
 
     const browser: Browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [...chromium.args, '--disable-gpu', '--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--disable-dev-shm-usage'],
         defaultViewport: { width: 1920, height: 1080 },
-        executablePath: await chromium.executablePath(),
+        executablePath: await chromium.executablePath('/tmp'),
         headless: true
     });
 

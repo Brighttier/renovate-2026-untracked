@@ -3,7 +3,7 @@ import { validateAndRecover } from "./blueprintValidator";
 import { analyzeEditIntent } from "./editIntentAnalyzer";
 
 // Cloud Functions base URL
-const FUNCTIONS_BASE_URL = 'https://us-central1-renovatemysite-app.cloudfunctions.net';
+const FUNCTIONS_BASE_URL = 'https://us-central1-renovatemysite-vibe.cloudfunctions.net';
 
 // Retry configuration
 const MAX_RETRIES = 2;
@@ -764,22 +764,16 @@ export const modernizeSite = async (
   request: ModernizeSiteRequest
 ): Promise<ModernizedSiteResponse> => {
   try {
-    console.log("[V4.0] Modernizing site:", request.sourceUrl);
+    console.log("[V3.0] Modernizing site with Gemini-only scraper:", request.sourceUrl);
 
-    // Use V4.0 Total Content endpoint for comprehensive modernization
-    const response = await fetch(`${FUNCTIONS_BASE_URL}/generateTotalContentModernizedSite`, {
+    // Use Gemini-only scraper (NO Puppeteer/Cheerio/Vision)
+    const response = await fetch(`${FUNCTIONS_BASE_URL}/generateModernizedSite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sourceUrl: request.sourceUrl,
         businessName: request.businessName,
-        category: request.category,
-        config: {
-          maxPages: 12,
-          enableOCR: true,
-          enableColorExtraction: true,
-          maxImagesForVision: 25,
-        }
+        category: request.category
       })
     });
 

@@ -36,7 +36,7 @@ const DOMAIN_CONNECT_CONFIG: DomainConnectConfig = {
     providerName: 'RenovateMySite',
     serviceId: 'firebase-hosting',
     serviceName: 'Firebase Hosting',
-    redirectUri: 'https://renovatemysite-app.web.app/domain-callback'
+    redirectUri: 'https://renovatemysite-vibe.web.app/domain-callback'
 };
 
 // GoDaddy Domain Connect endpoint

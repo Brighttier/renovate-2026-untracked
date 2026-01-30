@@ -21,22 +21,33 @@ async function getGeminiApiKey(): Promise<string> {
     return apiKey;
 }
 
-// Get Google Places API key from Secret Manager
+// Get Google Places API key from Secret Manager or environment
 async function getPlacesApiKey(): Promise<string> {
     if (placesApiKey) return placesApiKey;
 
-    const projectId = process.env.GCLOUD_PROJECT || 'renovatemysite-app';
-    const secretName = `projects/${projectId}/secrets/google-places-api-key/versions/latest`;
-
-    const [version] = await secretClient.accessSecretVersion({ name: secretName });
-    const apiKey = version.payload?.data?.toString();
-
-    if (!apiKey) {
-        throw new Error('Failed to retrieve Google Places API key from Secret Manager');
+    // Try environment variable first (for quick testing)
+    if (process.env.GOOGLE_PLACES_API_KEY) {
+        placesApiKey = process.env.GOOGLE_PLACES_API_KEY;
+        return placesApiKey;
     }
 
-    placesApiKey = apiKey;
-    return apiKey;
+    // Fall back to Secret Manager
+    try {
+        const projectId = process.env.GCLOUD_PROJECT || 'renovatemysite-vibe';
+        const secretName = `projects/${projectId}/secrets/google-places-api-key/versions/latest`;
+
+        const [version] = await secretClient.accessSecretVersion({ name: secretName });
+        const apiKey = version.payload?.data?.toString();
+
+        if (!apiKey) {
+            throw new Error('Failed to retrieve Google Places API key from Secret Manager');
+        }
+
+        placesApiKey = apiKey;
+        return apiKey;
+    } catch (error) {
+        throw new Error('Google Places API key not found. Set GOOGLE_PLACES_API_KEY environment variable or create google-places-api-key secret in Secret Manager');
+    }
 }
 
 // Initialize Gemini AI client

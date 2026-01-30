@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, Timestamp, onSnapshot, QueryConstraint } from 'firebase/firestore';
 import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 // Firebase configuration - loaded from environment variables
 const firebaseConfig = {
@@ -18,6 +19,7 @@ let app: ReturnType<typeof initializeApp> | null = null;
 let auth: ReturnType<typeof getAuth> | null = null;
 let db: ReturnType<typeof getFirestore> | null = null;
 let storage: ReturnType<typeof getStorage> | null = null;
+let functions: ReturnType<typeof getFunctions> | null = null;
 
 const initializeFirebase = () => {
   if (!app && firebaseConfig.apiKey) {
@@ -25,8 +27,9 @@ const initializeFirebase = () => {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
+    functions = getFunctions(app);
   }
-  return { app, auth, db, storage };
+  return { app, auth, db, storage, functions };
 };
 
 // Lazy getters
@@ -43,6 +46,11 @@ export const getFirebaseDb = () => {
 export const getFirebaseStorage = () => {
   initializeFirebase();
   return storage;
+};
+
+export const getFirebaseFunctions = () => {
+  initializeFirebase();
+  return functions;
 };
 
 // Auth helpers

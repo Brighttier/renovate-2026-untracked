@@ -1,17 +1,38 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAdmin } from '../../contexts/AdminContext';
 import { Icons } from '../Icons';
 import { AccountStatus, AdminTab } from '../../types';
 import { AUDIT_ACTION_LABELS } from '../../constants';
+import { vibeEditorService } from '../../services/vibeEditorService';
 
 const AdminDashboard: React.FC = () => {
   const { platformStats, users, auditLogs, systemHealth, refreshSystemHealth, metricsChanges, setActiveTab, exportAuditLogs } = useAdmin();
+
+  // Vibe Editor Metrics State
+  const [vibeMetrics, setVibeMetrics] = useState<{
+    totalEdits: number;
+    successRate: number;
+    avgLatency: number;
+    totalCost: number;
+    costPerEdit: number;
+  } | null>(null);
 
   // Refresh system health on mount
   useEffect(() => {
     refreshSystemHealth();
   }, [refreshSystemHealth]);
+
+  // Load vibe editor metrics
+  useEffect(() => {
+    const loadVibeMetrics = async () => {
+      const metrics = await vibeEditorService.getMetrics();
+      if (metrics) {
+        setVibeMetrics(metrics);
+      }
+    };
+    loadVibeMetrics();
+  }, []);
 
   const recentUsers = users
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -46,6 +67,13 @@ const AdminDashboard: React.FC = () => {
       value: `$${platformStats.totalAICost.toFixed(2)}`,
       change: `${platformStats.totalAICalls} calls`,
       positive: false,
+      icon: <Icons.Sparkles size={20} />
+    },
+    {
+      label: 'Vibe Edits',
+      value: vibeMetrics?.totalEdits.toLocaleString() || '0',
+      change: vibeMetrics ? `${vibeMetrics.successRate.toFixed(1)}% success` : 'No data',
+      positive: !vibeMetrics || vibeMetrics.successRate >= 90,
       icon: <Icons.Sparkles size={20} />
     }
   ];
@@ -88,7 +116,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Metrics Grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -110,6 +138,40 @@ const AdminDashboard: React.FC = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Vibe Editor Detailed Metrics */}
+      {vibeMetrics && (
+        <div className="bg-[#1A1625]/50 border border-[#9F8FD4]/10 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-bold text-white">Vibe Editor Performance</h3>
+            <div className="text-xs text-[#9F8FD4]">Real-time metrics</div>
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="p-4 bg-[#0D0B14]/50 rounded-xl">
+              <div className="text-xs text-[#6B6478] mb-1">Total Edits</div>
+              <div className="text-2xl font-bold text-white">{vibeMetrics.totalEdits.toLocaleString()}</div>
+            </div>
+            <div className="p-4 bg-[#0D0B14]/50 rounded-xl">
+              <div className="text-xs text-[#6B6478] mb-1">Success Rate</div>
+              <div className="text-2xl font-bold text-[#9F8FD4]">{vibeMetrics.successRate.toFixed(1)}%</div>
+            </div>
+            <div className="p-4 bg-[#0D0B14]/50 rounded-xl">
+              <div className="text-xs text-[#6B6478] mb-1">Avg Latency</div>
+              <div className="text-2xl font-bold text-white">{vibeMetrics.avgLatency.toFixed(0)}ms</div>
+            </div>
+            <div className="p-4 bg-[#0D0B14]/50 rounded-xl">
+              <div className="text-xs text-[#6B6478] mb-1">Cost/Edit</div>
+              <div className="text-2xl font-bold text-white">${vibeMetrics.costPerEdit.toFixed(4)}</div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-[#9F8FD4]/10">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[#6B6478]">Total AI Cost</span>
+              <span className="text-white font-bold">${vibeMetrics.totalCost.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-6">
         {/* Recent Users */}

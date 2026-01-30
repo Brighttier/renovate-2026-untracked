@@ -4,7 +4,7 @@
  */
 
 const FUNCTIONS_BASE_URL = import.meta.env.VITE_FUNCTIONS_BASE_URL ||
-  'https://us-central1-renovatemysite-app.cloudfunctions.net';
+  'https://us-central1-renovatemysite-vibe.cloudfunctions.net';
 
 /**
  * Extract logo and brand colors from an image URL

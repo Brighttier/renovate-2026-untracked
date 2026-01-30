@@ -1,7 +1,7 @@
 import { UserReferralStats, Referral } from "../types";
 
 // Cloud Functions base URL
-const FUNCTIONS_BASE_URL = 'https://us-central1-renovatemysite-app.cloudfunctions.net';
+const FUNCTIONS_BASE_URL = 'https://us-central1-renovatemysite-vibe.cloudfunctions.net';
 
 /**
  * Get or create referral stats for a user.

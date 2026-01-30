@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Icons } from '../Icons';
 import { BetaFeedback, BetaFeedbackStatus, BetaFeedbackCategory } from '../../types';
 import { getFeedback, updateFeedbackStatus, getFeedbackStats } from '../../services/betaFeedbackService';
+import { vibeEditorService } from '../../services/vibeEditorService';
 
 const STATUS_CONFIG: Record<BetaFeedbackStatus, { label: string; color: string; bgColor: string }> = {
   open: { label: 'Open', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
@@ -33,6 +34,10 @@ const AdminBetaErrors: React.FC = () => {
     byCategory: Record<BetaFeedbackCategory, number>;
   } | null>(null);
 
+  // Vibe Editor Errors
+  const [vibeErrors, setVibeErrors] = useState<any[]>([]);
+  const [showVibeErrors, setShowVibeErrors] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<BetaFeedbackStatus | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState<BetaFeedbackCategory | 'all'>('all');
@@ -44,6 +49,7 @@ const AdminBetaErrors: React.FC = () => {
   useEffect(() => {
     loadFeedback();
     loadStats();
+    loadVibeErrors();
   }, []);
 
   const loadFeedback = async () => {
@@ -64,6 +70,15 @@ const AdminBetaErrors: React.FC = () => {
       setStats(data);
     } catch (err) {
       console.error('Failed to load stats:', err);
+    }
+  };
+
+  const loadVibeErrors = async () => {
+    try {
+      const errors = await vibeEditorService.getErrorLogs({ resolved: false, limit: 50 });
+      setVibeErrors(errors);
+    } catch (err) {
+      console.error('Failed to load vibe errors:', err);
     }
   };
 
@@ -128,16 +143,40 @@ const AdminBetaErrors: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-white">Beta Feedback & Errors</h2>
-          <p className="text-sm text-[#6B6478]">Review and manage feedback from beta testers</p>
+          <p className="text-sm text-[#6B6478]">Review and manage feedback from beta testers and vibe editor errors</p>
         </div>
-        <button
-          onClick={() => { loadFeedback(); loadStats(); }}
+        <div className="flex items-center gap-3">
+          <div className="flex bg-[#0D0B14]/50 rounded-xl p-1">
+            <button
+              onClick={() => setShowVibeErrors(false)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                !showVibeErrors
+                  ? 'bg-[#9F8FD4]/10 text-[#9F8FD4]'
+                  : 'text-[#6B6478] hover:text-white'
+              }`}
+            >
+              Beta Feedback
+            </button>
+            <button
+              onClick={() => setShowVibeErrors(true)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showVibeErrors
+                  ? 'bg-[#9F8FD4]/10 text-[#9F8FD4]'
+                  : 'text-[#6B6478] hover:text-white'
+              }`}
+            >
+              Vibe Errors ({vibeErrors.length})
+            </button>
+          </div>
+          <button
+            onClick={() => { loadFeedback(); loadStats(); loadVibeErrors(); }}
           disabled={isLoading}
           className="flex items-center gap-2 px-4 py-2 bg-[#262033] hover:bg-zinc-700 rounded-xl text-sm text-white transition-colors disabled:opacity-50"
         >
           <Icons.History size={16} className={isLoading ? 'animate-spin' : ''} />
           Refresh
         </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -162,8 +201,61 @@ const AdminBetaErrors: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Vibe Editor Errors Table */}
+      {showVibeErrors ? (
+        <div className="bg-[#1A1625]/50 border border-[#9F8FD4]/10 rounded-2xl overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#9F8FD4]/10">
+                <th className="text-left text-sm font-bold text-[#6B6478] uppercase tracking-wider px-5 py-4">Timestamp</th>
+                <th className="text-left text-sm font-bold text-[#6B6478] uppercase tracking-wider px-5 py-4">Error Type</th>
+                <th className="text-left text-sm font-bold text-[#6B6478] uppercase tracking-wider px-5 py-4">Prompt</th>
+                <th className="text-left text-sm font-bold text-[#6B6478] uppercase tracking-wider px-5 py-4">Message</th>
+                <th className="text-left text-sm font-bold text-[#6B6478] uppercase tracking-wider px-5 py-4">Retries</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vibeErrors.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <Icons.Check size={48} className="mx-auto text-[#9F8FD4] mb-4" />
+                    <p className="text-[#6B6478]">No vibe editor errors</p>
+                  </td>
+                </tr>
+              ) : (
+                vibeErrors.map((error: any) => (
+                  <tr key={error.errorId} className="border-b border-[#9F8FD4]/5 hover:bg-[#0D0B14]/50 transition-colors">
+                    <td className="px-5 py-4 text-sm text-white">
+                      {new Date(error.timestamp).toLocaleString()}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-bold uppercase ${
+                        error.errorType === 'validation' ? 'bg-amber-500/10 text-amber-500' :
+                        error.errorType === 'ai-failure' ? 'bg-red-500/10 text-red-500' :
+                        'bg-zinc-500/10 text-zinc-400'
+                      }`}>
+                        {error.errorType}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-white max-w-xs truncate">
+                      {error.originalPrompt}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-[#6B6478] max-w-md truncate">
+                      {error.errorMessage}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-white">
+                      {error.retryCount}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="flex items-center gap-4 flex-wrap">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
           <Icons.Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6478]" />
@@ -445,6 +537,8 @@ const AdminBetaErrors: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+        </>
+      )}
     </div>
   );
 };

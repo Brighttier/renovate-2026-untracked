@@ -22,6 +22,7 @@ import { adminSignIn, adminSignUp, adminSignInWithGoogle } from './services/fire
 import UsageLimitModal from './components/billing/UsageLimitModal';
 import AISandbox from './components/AISandbox';
 import AIChatPanel from './components/AIChatPanel';
+import { VibeEditorUI } from './components/VibeEditorUI';
 import { stripeService } from './services/stripeService';
 
 const DEMO_LEADS: Lead[] = [
@@ -177,6 +178,7 @@ const App: React.FC = () => {
 
   // New AI Editor State (Vibe Coder - HTML-based)
   const [useVibeEditor, setUseVibeEditor] = useState(true); // Toggle between old/new editor
+  const [useNewVibeUI, setUseNewVibeUI] = useState(false); // Toggle for Phase 3 vibe editor UI (false = use legacy with preview)
   const [siteHTML, setSiteHTML] = useState<string>('');
   const [aiVersions, setAiVersions] = useState<AIEditorVersion[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
@@ -449,7 +451,7 @@ const App: React.FC = () => {
     setGenerationProgress(5);
 
     try {
-      // SITE MODERNIZATION: Extract real content and create modern version
+      // SITE MODERNIZATION: Extract real content with Vision API and create modern version
       console.log("Site Modernization: Extracting from", biz.websiteUrl);
       setGenerationProgress(10);
 
@@ -460,8 +462,6 @@ const App: React.FC = () => {
         designStyle: 'auto',
         preserveColors: true
       });
-
-      console.log("Site modernized:", response.siteIdentity.businessName);
       console.log("[App.tsx] HTML response length:", response.html?.length || 0);
       console.log("[App.tsx] HTML first 300 chars:", response.html?.substring(0, 300));
       console.log("[App.tsx] Pipeline version:", response.pipelineVersion);
@@ -2167,36 +2167,60 @@ const App: React.FC = () => {
 
               {/* New Vibe Editor (HTML-based) */}
               {isSplitView && useVibeEditor && (
-                <div className="flex w-full h-[calc(100vh-80px)] overflow-hidden relative bg-[#F5F3FF]">
-                  {/* Chat Panel */}
-                  <div className={`w-[450px] h-full ${isFullscreenPreview ? 'hidden' : 'flex'}`}>
-                    <AIChatPanel
-                      messages={aiChatMessages}
-                      isLoading={isGenerating}
-                      onSendMessage={handleVibeEditorSendMessage}
-                      deploymentStatus={aiDeploymentStatus}
-                      businessName={selectedBusiness?.name}
-                      category={category}
+                useNewVibeUI ? (
+                  <div className="w-full h-[calc(100vh-80px)] overflow-hidden">
+                    {/* Phase 3: New Vibe Editor UI with surgical diff-based editing */}
+                    <VibeEditorUI
+                      projectId={selectedBusiness?.id || 'demo-project'}
+                      userId={authEmail ? btoa(authEmail).substring(0, 8) : 'demo-user'}
+                      currentHTML={siteHTML}
+                      onHTMLUpdate={(newHTML) => {
+                        setSiteHTML(newHTML);
+                        // Save version
+                        const version: AIEditorVersion = {
+                          id: `v${aiVersions.length + 1}`,
+                          timestamp: Date.now(),
+                          prompt: 'Vibe editor update',
+                          code: newHTML
+                        };
+                        setAiVersions(prev => [...prev, version]);
+                        setCurrentVersionId(version.id);
+                      }}
                     />
                   </div>
-
-                  {/* Sandbox Preview */}
-                  <div className={`flex-1 h-full flex flex-col transition-all duration-500 ${isFullscreenPreview ? 'p-0 z-50 fixed inset-0' : 'p-4'}`}>
-                    <div className="flex-1 overflow-hidden rounded-2xl">
-                      <AISandbox
-                        aiGeneratedCode={siteHTML}
-                        isUpdating={isGenerating}
-                        versions={aiVersions}
-                        currentVersionId={currentVersionId}
-                        onRevert={(version) => handleVibeVersionRestore(version.id)}
-                        onDeploy={handleFinishEditing}
-                        isSelectionMode={isSelectionMode}
-                        onSelectionModeToggle={(enabled) => setIsSelectionMode(enabled)}
-                        onElementSelected={(tagName) => handleVibeElementSelect({ tag: tagName })}
+                ) : (
+                  // Legacy Vibe Editor with chat + sandbox
+                  <div className="flex w-full h-[calc(100vh-80px)] overflow-hidden relative bg-[#F5F3FF]">
+                    {/* Chat Panel */}
+                    <div className={`w-[450px] h-full ${isFullscreenPreview ? 'hidden' : 'flex'}`}>
+                      <AIChatPanel
+                        messages={aiChatMessages}
+                        isLoading={isGenerating}
+                        onSendMessage={handleVibeEditorSendMessage}
+                        deploymentStatus={aiDeploymentStatus}
+                        businessName={selectedBusiness?.name}
+                        category={category}
                       />
                     </div>
+
+                    {/* Sandbox Preview */}
+                    <div className={`flex-1 h-full flex flex-col transition-all duration-500 ${isFullscreenPreview ? 'p-0 z-50 fixed inset-0' : 'p-4'}`}>
+                      <div className="flex-1 overflow-hidden rounded-2xl">
+                        <AISandbox
+                          aiGeneratedCode={siteHTML}
+                          isUpdating={isGenerating}
+                          versions={aiVersions}
+                          currentVersionId={currentVersionId}
+                          onRevert={(version) => handleVibeVersionRestore(version.id)}
+                          onDeploy={handleFinishEditing}
+                          isSelectionMode={isSelectionMode}
+                          onSelectionModeToggle={(enabled) => setIsSelectionMode(enabled)}
+                          onElementSelected={(tagName) => handleVibeElementSelect({ tag: tagName })}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )
               )}
 
               {/* Legacy Blueprint Editor */}
