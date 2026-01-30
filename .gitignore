@@ -25,3 +25,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Sensitive files - NEVER commit
+.env
+.env.*
+ADMIN_CREDENTIALS.md
+*.credentials
+*.secret
