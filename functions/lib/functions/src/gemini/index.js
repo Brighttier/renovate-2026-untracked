@@ -33,7 +33,8 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateVibeImage = exports.generateSiteFromBrief = exports.analyzeBrand = exports.generateTotalContentModernizedSite = exports.generateModernizedSite = exports.generateAIImage = exports.editSiteHTML = exports.generateSiteHTML = exports.generateImage = exports.editBlueprint = exports.generateBlueprint = exports.findBusinesses = void 0;
+exports.generateVibeImage = exports.generateSiteFromBrief = exports.analyzeBrand = exports.generateTotalContentModernizedSite = exports.generateAIImage = exports.editSiteHTML = exports.generateSiteHTML = exports.generateImage = exports.editBlueprint = exports.generateBlueprint = exports.findBusinesses = void 0;
+exports.generateModernizedSiteHandler = generateModernizedSiteHandler;
 const functions = __importStar(require("firebase-functions"));
 const secret_manager_1 = require("@google-cloud/secret-manager");
 const generative_ai_1 = require("@google/generative-ai");
@@ -2819,18 +2820,10 @@ ${((_s = siteIdentity.fullCopy) === null || _s === void 0 ? void 0 : _s.slice(0,
  * 2. Passes the full identity to Gemini with the premium modernization prompt
  * 3. Returns modernized HTML that preserves ALL original content (zero hallucination)
  */
-exports.generateModernizedSite = functions
-    .runWith({
-    timeoutSeconds: 540, // 9 minutes max for deep scraping + image generation + HTML generation
-    memory: '8GB', // Maximum memory for 1st gen functions (gives 2 vCPU)
-})
-    .https.onRequest(async (req, res) => {
+// Handler function for 2nd Gen Functions (called from minimalExports.ts)
+async function generateModernizedSiteHandler(req, res) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
-    // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
-        res.set(corsHeaders).status(204).send('');
-        return;
-    }
+    // CORS headers already set by wrapper, but ensure they're present
     res.set(corsHeaders);
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method not allowed' });
@@ -2945,7 +2938,7 @@ exports.generateModernizedSite = functions
             error: error.message || 'Failed to modernize site'
         });
     }
-});
+}
 // ============================================
 // TOTAL CONTENT MODERNIZATION V4.0
 // Complete Digital Presence Migration

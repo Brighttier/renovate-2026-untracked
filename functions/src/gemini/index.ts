@@ -3281,18 +3281,13 @@ ${siteIdentity.fullCopy?.slice(0, 3000) || 'No additional content'}
  * 2. Passes the full identity to Gemini with the premium modernization prompt
  * 3. Returns modernized HTML that preserves ALL original content (zero hallucination)
  */
-export const generateModernizedSite = functions
-    .runWith({
-        timeoutSeconds: 540, // 9 minutes max for deep scraping + image generation + HTML generation
-        memory: '8GB',       // Maximum memory for 1st gen functions (gives 2 vCPU)
-    })
-    .https.onRequest(async (req, res) => {
-    // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
-        res.set(corsHeaders).status(204).send('');
-        return;
-    }
 
+// Handler function for 2nd Gen Functions (called from minimalExports.ts)
+export async function generateModernizedSiteHandler(
+    req: functions.https.Request,
+    res: functions.Response
+): Promise<void> {
+    // CORS headers already set by wrapper, but ensure they're present
     res.set(corsHeaders);
 
     if (req.method !== 'POST') {
@@ -3432,7 +3427,7 @@ export const generateModernizedSite = functions
             error: error.message || 'Failed to modernize site'
         });
     }
-});
+}
 
 // ============================================
 // TOTAL CONTENT MODERNIZATION V4.0

@@ -48,11 +48,18 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+/**
+ * generateModernizedSite - Maximum Performance Configuration
+ * - 8GB memory (max for 1st gen, gives 2 vCPU automatically)
+ * - 540s timeout (9 minutes max)
+ *
+ * Note: To upgrade to 2nd Gen (16GB, 4 vCPU), you must first delete
+ * the existing function in Firebase Console, then redeploy.
+ */
 exports.generateModernizedSite = functions
     .runWith({
     timeoutSeconds: 540, // 9 minutes max for deep scraping + image generation + HTML generation
-    memory: '8GB', // Maximum memory for 1st gen functions
-    // Note: With 8GB memory, you automatically get 2 vCPU
+    memory: '8GB', // Maximum memory for 1st gen functions (gives 2 vCPU)
 })
     .https.onRequest(async (req, res) => {
     // Handle CORS preflight
@@ -62,8 +69,8 @@ exports.generateModernizedSite = functions
     }
     res.set(corsHeaders);
     // Lazy load the actual implementation only when called
-    const { generateModernizedSite: actualFunction } = await Promise.resolve().then(() => __importStar(require('./gemini/index')));
-    return actualFunction(req, res);
+    const { generateModernizedSiteHandler } = await Promise.resolve().then(() => __importStar(require('./gemini/index')));
+    return generateModernizedSiteHandler(req, res);
 });
 exports.findLeadsWithMaps = functions.https.onRequest(async (req, res) => {
     // Handle CORS preflight
