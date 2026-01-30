@@ -26,6 +26,13 @@ async function getGenAI(): Promise<GoogleGenerativeAI> {
     return genAI;
 }
 
+export interface ImagePrompts {
+    hero: string;
+    services: string[];
+    about: string;
+    gallery: string[];
+}
+
 export interface SiteIdentity {
     businessName: string;
     logoUrl: string | null;
@@ -45,6 +52,7 @@ export interface SiteIdentity {
     socialLinks?: string[];
     businessHours?: string;
     fullCopy?: string;
+    imagePrompts?: ImagePrompts;
 }
 
 export interface DeepScrapeOptions {
@@ -80,8 +88,22 @@ Extract and return ONLY a JSON object with this exact structure (no markdown, no
   "visualVibe": "brief description of visual style",
   "testimonials": [{"text": "quote", "author": "name"}],
   "tagline": "their tagline or slogan",
-  "contactInfo": {"phone": "phone", "email": "email", "address": "address"}
+  "contactInfo": {"phone": "phone", "email": "email", "address": "address"},
+  "imagePrompts": {
+    "hero": "A professional, high-quality photo for [business type] website hero section. [detailed description based on business vibe, services, and style - include lighting, composition, mood]",
+    "services": ["prompt for service 1 image", "prompt for service 2 image", "prompt for service 3 image"],
+    "about": "A professional photo for the about/team section of [business type]. [description matching their brand personality]",
+    "gallery": ["prompt for gallery image 1", "prompt for gallery image 2"]
+  }
 }
+
+IMPORTANT for imagePrompts:
+- Create DETAILED prompts (30-50 words each) that describe professional photos matching the business type
+- Include: lighting style, color mood, composition, professional setting
+- For hero: focus on aspirational, eye-catching imagery representing their main service
+- For services: create specific prompts for each service they offer
+- For about: professional team or workspace imagery
+- For gallery: showcase-quality images of their work or environment
 
 Only include information that is clearly visible on the website. Use null for missing data.`;
 
@@ -113,7 +135,8 @@ Only include information that is clearly visible on the website. Use null for mi
             coreValues: [],
             socialLinks: [],
             businessHours: undefined,
-            fullCopy: undefined
+            fullCopy: undefined,
+            imagePrompts: data.imagePrompts || null
         };
 
     } catch (error) {

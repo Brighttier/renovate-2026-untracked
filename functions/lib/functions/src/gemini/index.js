@@ -66,6 +66,122 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
 };
+// Firebase Storage for image uploads
+const storage_1 = require("firebase-admin/storage");
+/**
+ * Internal helper: Generate AI image using Nano Banana Pro and upload to Firebase Storage
+ * Returns a public Firebase Storage URL
+ */
+async function generateAndStoreImage(prompt, siteId, imageType) {
+    var _a, _b;
+    try {
+        const apiKey = await getGeminiApiKey();
+        console.log(`[ImageGen] Generating ${imageType} image for ${siteId}...`);
+        // Use Nano Banana Pro for high-quality image generation
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseModalities: ["IMAGE"],
+                    imageConfig: {
+                        aspectRatio: imageType === 'hero' ? "16:9" : "4:3",
+                        imageSize: "1K"
+                    }
+                }
+            })
+        });
+        if (!response.ok) {
+            console.warn(`[ImageGen] Nano Banana Pro failed with status ${response.status}`);
+            return null;
+        }
+        const data = await response.json();
+        // Extract base64 image from response
+        let base64Data = null;
+        if (data.candidates && ((_b = (_a = data.candidates[0]) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.parts)) {
+            for (const part of data.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    base64Data = part.inlineData.data;
+                    break;
+                }
+            }
+        }
+        if (!base64Data) {
+            console.warn(`[ImageGen] No image data in response for ${imageType}`);
+            return null;
+        }
+        // Upload to Firebase Storage
+        const bucket = (0, storage_1.getStorage)().bucket();
+        const timestamp = Date.now();
+        const filePath = `sites/${siteId}/generated-${imageType}-${timestamp}.png`;
+        const file = bucket.file(filePath);
+        const buffer = Buffer.from(base64Data, 'base64');
+        await file.save(buffer, {
+            metadata: {
+                contentType: 'image/png',
+                cacheControl: 'public, max-age=31536000',
+            }
+        });
+        await file.makePublic();
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        console.log(`[ImageGen] Successfully generated and stored ${imageType}: ${publicUrl}`);
+        return publicUrl;
+    }
+    catch (error) {
+        console.error(`[ImageGen] Error generating ${imageType}:`, error);
+        return null;
+    }
+}
+async function generateSiteImages(imagePrompts, siteId) {
+    const result = {
+        hero: null,
+        services: [],
+        about: null,
+        gallery: []
+    };
+    if (!imagePrompts) {
+        console.log('[ImageGen] No image prompts provided, skipping image generation');
+        return result;
+    }
+    const safeId = siteId.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 50);
+    console.log('[ImageGen] Starting image generation with Nano Banana Pro...');
+    // Generate images in parallel for speed (but limit concurrency)
+    const promises = [];
+    // Hero image
+    if (imagePrompts.hero) {
+        promises.push(generateAndStoreImage(imagePrompts.hero, safeId, 'hero')
+            .then(url => { result.hero = url; }));
+    }
+    // About image
+    if (imagePrompts.about) {
+        promises.push(generateAndStoreImage(imagePrompts.about, safeId, 'about')
+            .then(url => { result.about = url; }));
+    }
+    // Service images (max 3)
+    const servicePrompts = (imagePrompts.services || []).slice(0, 3);
+    servicePrompts.forEach((prompt, index) => {
+        promises.push(generateAndStoreImage(prompt, safeId, `service-${index}`)
+            .then(url => { if (url)
+            result.services.push(url); }));
+    });
+    // Gallery images (max 2)
+    const galleryPrompts = (imagePrompts.gallery || []).slice(0, 2);
+    galleryPrompts.forEach((prompt, index) => {
+        promises.push(generateAndStoreImage(prompt, safeId, `gallery-${index}`)
+            .then(url => { if (url)
+            result.gallery.push(url); }));
+    });
+    // Wait for all to complete
+    await Promise.all(promises);
+    console.log('[ImageGen] Generation complete:', {
+        hero: !!result.hero,
+        services: result.services.length,
+        about: !!result.about,
+        gallery: result.gallery.length
+    });
+    return result;
+}
 /**
  * Find businesses using Gemini with Google Search grounding
  */
@@ -2454,8 +2570,8 @@ Return ONLY the HTML body content wrapped in [CODE_UPDATE]...[/CODE_UPDATE]
  * Generate premium modernized site HTML using Gemini 2.5 Flash with Thinking
  * Uses placeholder system for reliable asset injection
  */
-async function generatePremiumModernizedSite(siteIdentity, category) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
+async function generatePremiumModernizedSite(siteIdentity, category, generatedImages) {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
     const apiKey = await getGeminiApiKey();
     // Build content summary for the prompt
     const testimonialNames = ((_a = siteIdentity.testimonials) === null || _a === void 0 ? void 0 : _a.map(t => t.author).join(', ')) || 'none';
@@ -2466,8 +2582,25 @@ async function generatePremiumModernizedSite(siteIdentity, category) {
     const serviceImageCount = ((_e = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.services) === null || _e === void 0 ? void 0 : _e.length) || 0;
     const galleryImageCount = ((_f = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.gallery) === null || _f === void 0 ? void 0 : _f.length) || ((_g = siteIdentity.galleryImages) === null || _g === void 0 ? void 0 : _g.length) || 0;
     const teamImageCount = ((_h = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.about) === null || _h === void 0 ? void 0 : _h.length) || 0;
-    // Build placeholder availability section
-    const availablePlaceholders = `
+    // Build AI-generated images section if available
+    const hasGeneratedImages = generatedImages && (generatedImages.hero ||
+        generatedImages.services.length > 0 ||
+        generatedImages.about ||
+        generatedImages.gallery.length > 0);
+    const generatedImagesSection = hasGeneratedImages ? `
+## AI-GENERATED IMAGES (USE THESE EXACT URLs - DO NOT USE PLACEHOLDERS)
+CRITICAL: These are real, AI-generated images. Use these EXACT URLs in img src attributes.
+DO NOT use placehold.co, placeholder.com, or any other placeholder service.
+
+${(generatedImages === null || generatedImages === void 0 ? void 0 : generatedImages.hero) ? `- Hero Image: ${generatedImages.hero}` : ''}
+${((_j = generatedImages === null || generatedImages === void 0 ? void 0 : generatedImages.services) === null || _j === void 0 ? void 0 : _j.length) ? generatedImages.services.map((url, i) => `- Service Image ${i + 1}: ${url}`).join('\n') : ''}
+${(generatedImages === null || generatedImages === void 0 ? void 0 : generatedImages.about) ? `- About/Team Image: ${generatedImages.about}` : ''}
+${((_k = generatedImages === null || generatedImages === void 0 ? void 0 : generatedImages.gallery) === null || _k === void 0 ? void 0 : _k.length) ? generatedImages.gallery.map((url, i) => `- Gallery Image ${i + 1}: ${url}`).join('\n') : ''}
+
+IMPORTANT: Use the above Firebase Storage URLs directly in <img src="..."> tags.
+` : '';
+    // Build placeholder availability section (fallback if no generated images)
+    const availablePlaceholders = hasGeneratedImages ? '' : `
 ## Available Image Placeholders (ONLY use these)
 - Logo: [[ID_REAL_LOGO_HERE]] ${siteIdentity.logoUrl || siteIdentity.logoBase64 ? '✓ AVAILABLE' : '✗ NOT AVAILABLE'}
 - Hero Images: [[ID_HERO_1_HERE]] through [[ID_HERO_${heroImageCount}_HERE]] (${heroImageCount} available)
@@ -2482,9 +2615,9 @@ async function generatePremiumModernizedSite(siteIdentity, category) {
         : '';
     // Build semantic captions section for intelligent image placement
     const semanticCaptions = [
-        ...(((_j = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.hero) === null || _j === void 0 ? void 0 : _j.map((img, i) => `[[ID_HERO_${i + 1}_HERE]]: ${img.semanticCaption || img.alt || 'Hero image'}`)) || []),
-        ...(((_k = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.services) === null || _k === void 0 ? void 0 : _k.map((img, i) => `[[ID_SERVICE_IMG_${i + 1}_HERE]]: ${img.semanticCaption || img.alt || 'Service image'}`)) || []),
-        ...(((_l = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.gallery) === null || _l === void 0 ? void 0 : _l.map((img, i) => `[[ID_GALLERY_${i + 1}_HERE]]: ${img.semanticCaption || img.alt || 'Gallery image'}`)) || []),
+        ...(((_l = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.hero) === null || _l === void 0 ? void 0 : _l.map((img, i) => `[[ID_HERO_${i + 1}_HERE]]: ${img.semanticCaption || img.alt || 'Hero image'}`)) || []),
+        ...(((_m = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.services) === null || _m === void 0 ? void 0 : _m.map((img, i) => `[[ID_SERVICE_IMG_${i + 1}_HERE]]: ${img.semanticCaption || img.alt || 'Service image'}`)) || []),
+        ...(((_o = semanticMap === null || semanticMap === void 0 ? void 0 : semanticMap.gallery) === null || _o === void 0 ? void 0 : _o.map((img, i) => `[[ID_GALLERY_${i + 1}_HERE]]: ${img.semanticCaption || img.alt || 'Gallery image'}`)) || []),
     ].join('\n');
     const captionsSection = semanticCaptions
         ? `\n## Semantic Image Captions (for intelligent placement)\n${semanticCaptions}`
@@ -2501,10 +2634,11 @@ async function generatePremiumModernizedSite(siteIdentity, category) {
 - Accent Color: ${siteIdentity.accentColor || 'use primaryColors[2]'}
 
 ## Brand Colors (USE ALL via CSS variables)
-Primary: ${((_m = siteIdentity.primaryColors) === null || _m === void 0 ? void 0 : _m[0]) || '#3B82F6'}
-Secondary: ${((_o = siteIdentity.primaryColors) === null || _o === void 0 ? void 0 : _o[1]) || '#1E40AF'}
-Accent: ${siteIdentity.accentColor || ((_p = siteIdentity.primaryColors) === null || _p === void 0 ? void 0 : _p[2]) || '#60A5FA'}
+Primary: ${((_p = siteIdentity.primaryColors) === null || _p === void 0 ? void 0 : _p[0]) || '#3B82F6'}
+Secondary: ${((_q = siteIdentity.primaryColors) === null || _q === void 0 ? void 0 : _q[1]) || '#1E40AF'}
+Accent: ${siteIdentity.accentColor || ((_r = siteIdentity.primaryColors) === null || _r === void 0 ? void 0 : _r[2]) || '#60A5FA'}
 
+${generatedImagesSection}
 ${availablePlaceholders}
 
 ## Navigation Links
@@ -2534,18 +2668,19 @@ ${JSON.stringify(siteIdentity.socialLinks || {}, null, 2)}
 ${siteIdentity.businessHours || 'Not specified'}
 
 ## Full Page Content (for additional text if needed)
-${((_q = siteIdentity.fullCopy) === null || _q === void 0 ? void 0 : _q.slice(0, 3000)) || 'No additional content'}
+${((_s = siteIdentity.fullCopy) === null || _s === void 0 ? void 0 : _s.slice(0, 3000)) || 'No additional content'}
 
 ---
 
 # FINAL REMINDERS
-1. Use [[ID_*_HERE]] placeholders for ALL images - they will be replaced with real URLs
+1. ${hasGeneratedImages ? 'USE THE AI-GENERATED IMAGE URLs provided above - DO NOT use placeholders or placeholder services' : 'Use [[ID_*_HERE]] placeholders for ALL images - they will be replaced with real URLs'}
 2. Use REAL testimonials with names: ${testimonialNames}
 3. Use REAL services: ${serviceNames}
 4. Include ALL CSS animations with staggered delays
 5. Use CSS variables for colors: var(--color-primary), var(--color-secondary), var(--color-accent)
 6. Apply rounded-3xl, shadow-2xl, backdrop-blur-xl for SaaS-glossy look
-7. If extractedFacts has "Est." dates or awards, use them as trust signals`;
+7. If extractedFacts has "Est." dates or awards, use them as trust signals
+8. ${hasGeneratedImages ? 'CRITICAL: The hero section MUST use the AI-generated hero image URL. Service sections MUST use service image URLs.' : 'Use placeholder images that will be injected later'}`;
     const fullPrompt = PREMIUM_MODERNIZATION_PROMPT + siteDataSection;
     console.log('[PremiumGen v3.0] Generating with Gemini 2.5 Flash + Thinking...');
     // Try Gemini 2.5 Flash with thinking first, fall back to 2.0 Flash
@@ -2574,7 +2709,7 @@ ${((_q = siteIdentity.fullCopy) === null || _q === void 0 ? void 0 : _q.slice(0,
         }
         const data = await response.json();
         // Extract thinking and response parts
-        const parts = ((_t = (_s = (_r = data.candidates) === null || _r === void 0 ? void 0 : _r[0]) === null || _s === void 0 ? void 0 : _s.content) === null || _t === void 0 ? void 0 : _t.parts) || [];
+        const parts = ((_v = (_u = (_t = data.candidates) === null || _t === void 0 ? void 0 : _t[0]) === null || _u === void 0 ? void 0 : _u.content) === null || _v === void 0 ? void 0 : _v.parts) || [];
         for (const part of parts) {
             if (part.thought) {
                 thinkingOutput += part.text + '\n';
@@ -2607,7 +2742,7 @@ ${((_q = siteIdentity.fullCopy) === null || _q === void 0 ? void 0 : _q.slice(0,
             throw new Error('Gemini API error: ' + response.status + ' - ' + errorText);
         }
         const data = await response.json();
-        responseText = ((_y = (_x = (_w = (_v = (_u = data.candidates) === null || _u === void 0 ? void 0 : _u[0]) === null || _v === void 0 ? void 0 : _v.content) === null || _w === void 0 ? void 0 : _w.parts) === null || _x === void 0 ? void 0 : _x[0]) === null || _y === void 0 ? void 0 : _y.text) || '';
+        responseText = ((_0 = (_z = (_y = (_x = (_w = data.candidates) === null || _w === void 0 ? void 0 : _w[0]) === null || _x === void 0 ? void 0 : _x.content) === null || _y === void 0 ? void 0 : _y.parts) === null || _z === void 0 ? void 0 : _z[0]) === null || _0 === void 0 ? void 0 : _0.text) || '';
         thinkingOutput = 'Fallback to Gemini 2.0 Flash (no thinking mode)';
     }
     console.log('[PremiumGen v3.0] Response length:', responseText.length);
@@ -2738,11 +2873,48 @@ exports.generateModernizedSite = functions
             galleryImages: ((_f = siteIdentity.galleryImages) === null || _f === void 0 ? void 0 : _f.length) || 0,
             extractedFacts: ((_g = siteIdentity.extractedFacts) === null || _g === void 0 ? void 0 : _g.length) || 0,
             visionAnalysisComplete: siteIdentity.visionAnalysisComplete,
-            hasSemanticMap: !!siteIdentity.semanticImageMap
+            hasSemanticMap: !!siteIdentity.semanticImageMap,
+            hasImagePrompts: !!siteIdentity.imagePrompts
         });
-        // 2. Generate premium modernized site with Gemini 2.5 Flash + Thinking
-        console.log('[ModernizeSite v3.0] Starting Gemini 2.5 Flash generation with thinking...');
-        const { html, thinking } = await generatePremiumModernizedSite(siteIdentity, category || 'general');
+        // 2. Generate AI images using Nano Banana Pro (if image prompts available)
+        let generatedImages = { hero: null, services: [], about: null, gallery: [] };
+        if (siteIdentity.imagePrompts) {
+            console.log('[ModernizeSite v3.0] Generating images with Nano Banana Pro...');
+            generatedImages = await generateSiteImages(siteIdentity.imagePrompts, siteIdentity.businessName || 'site');
+            // Inject generated images into siteIdentity for HTML generation
+            if (generatedImages.hero) {
+                siteIdentity.heroImages = [{ url: generatedImages.hero, alt: `${siteIdentity.businessName} hero` }];
+            }
+            if (generatedImages.services.length > 0) {
+                // Add service images to gallery for now (can be used in services section)
+                siteIdentity.galleryImages = generatedImages.services.map((url, i) => {
+                    var _a;
+                    return ({
+                        url,
+                        alt: `${((_a = siteIdentity.services) === null || _a === void 0 ? void 0 : _a[i]) || 'Service'}`
+                    });
+                });
+            }
+            if (generatedImages.about) {
+                // Store about image in teamMembers as a generic placeholder
+                if (!siteIdentity.teamMembers || siteIdentity.teamMembers.length === 0) {
+                    siteIdentity.teamMembers = [{
+                            name: 'Our Team',
+                            role: siteIdentity.businessName || 'Team',
+                            imageUrl: generatedImages.about
+                        }];
+                }
+            }
+            console.log('[ModernizeSite v3.0] Images generated:', {
+                hero: !!generatedImages.hero,
+                services: generatedImages.services.length,
+                about: !!generatedImages.about,
+                gallery: generatedImages.gallery.length
+            });
+        }
+        // 3. Generate premium modernized site with Gemini 3 Pro + Thinking
+        console.log('[ModernizeSite v3.0] Starting Gemini 3 Pro generation with thinking...');
+        const { html, thinking } = await generatePremiumModernizedSite(siteIdentity, category || 'general', generatedImages);
         console.log('[ModernizeSite v3.0] Generation complete, HTML length:', html.length);
         // Prepare response (exclude large base64 data)
         const identityForResponse = {
