@@ -48,7 +48,12 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
-exports.generateModernizedSite = functions.https.onRequest(async (req, res) => {
+exports.generateModernizedSite = functions
+    .runWith({
+    timeoutSeconds: 300, // 5 minutes for deep scraping + generation
+    memory: '4GB',
+})
+    .https.onRequest(async (req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         res.set(corsHeaders).status(204).send('');
