@@ -2821,8 +2821,8 @@ ${((_s = siteIdentity.fullCopy) === null || _s === void 0 ? void 0 : _s.slice(0,
  */
 exports.generateModernizedSite = functions
     .runWith({
-    timeoutSeconds: 300, // 5 minutes for deep scraping + generation
-    memory: '4GB',
+    timeoutSeconds: 540, // 9 minutes max for deep scraping + image generation + HTML generation
+    memory: '8GB', // Maximum memory for 1st gen functions (gives 2 vCPU)
 })
     .https.onRequest(async (req, res) => {
     var _a, _b, _c, _d, _e, _f, _g, _h;

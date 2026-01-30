@@ -50,8 +50,9 @@ const corsHeaders = {
 };
 exports.generateModernizedSite = functions
     .runWith({
-    timeoutSeconds: 300, // 5 minutes for deep scraping + generation
-    memory: '4GB',
+    timeoutSeconds: 540, // 9 minutes max for deep scraping + image generation + HTML generation
+    memory: '8GB', // Maximum memory for 1st gen functions
+    // Note: With 8GB memory, you automatically get 2 vCPU
 })
     .https.onRequest(async (req, res) => {
     // Handle CORS preflight
