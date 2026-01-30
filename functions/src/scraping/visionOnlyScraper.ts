@@ -68,7 +68,7 @@ export async function deepScrapeSite(
     console.log(`[GeminiScraper] Analyzing: ${url}`);
 
     const ai = await getGenAI();
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-pro' });
+    const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
     const prompt = `Analyze this website: ${url}
 

@@ -32,7 +32,7 @@ async function getGenAI() {
 async function deepScrapeSite(url, options = {}) {
     console.log(`[GeminiScraper] Analyzing: ${url}`);
     const ai = await getGenAI();
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-pro' });
+    const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
     const prompt = `Analyze this website: ${url}
 
 Extract and return ONLY a JSON object with this exact structure (no markdown, no explanation):

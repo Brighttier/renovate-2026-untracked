@@ -90,7 +90,7 @@ export const editSiteHTML = functions.https.onRequest(async (req, res) => {
 
     // Load dependencies only when function is called
     const ai = await getGenAI();
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
     const editType = detectEditType(instruction);
     console.log('editSiteHTML: Detected edit type:', editType);

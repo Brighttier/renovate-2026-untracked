@@ -298,7 +298,7 @@ async function generateSemanticCaption(imageUrl) {
             return null;
         }
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         const prompt = `Describe this image in EXACTLY 10 words or fewer for a website context.
 Be specific about what you see (e.g., "Modern gym equipment in spacious fitness center", "Smiling dental team in clinical office").
 Output ONLY the caption, nothing else.`;

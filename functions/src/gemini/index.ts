@@ -63,7 +63,7 @@ export const findBusinesses = functions.https.onRequest(async (req, res) => {
         }
 
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
         const prompt = `Find 5-8 real local businesses in the "${category}" industry located in "${location}".
 For each business, provide:
@@ -125,7 +125,7 @@ export const generateBlueprint = functions.https.onRequest(async (req, res) => {
         }
 
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
         const systemInstruction = `You are a world-class creative director and conversion-focused UX strategist, specializing in premium landing pages for local businesses that compete with national brands.
 
@@ -412,7 +412,7 @@ export const editBlueprint = functions.https.onRequest(async (req, res) => {
         console.log(`editBlueprint: Intent="${intent}" (confidence=${confidence.toFixed(2)}), instruction="${instruction}"`);
 
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
         // Build intent-aware prompt
         const intentInstructions = getIntentInstructions(intent);
@@ -836,7 +836,7 @@ export const generateSiteHTML = functions.https.onRequest(async (req, res) => {
 
         const ai = await getGenAI();
         // Use Gemini 2.0 Flash Exp (most capable available model)
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
         // Build rich context from research data
         let businessContext = '';
@@ -1176,7 +1176,7 @@ export const editSiteHTML = functions.https.onRequest(async (req, res) => {
         }
 
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
         // Detect edit type for specialized handling
         const editType = detectEditType(instruction);
@@ -1401,7 +1401,7 @@ IMPORTANT:
 
 /**
  * Generate AI image using Gemini Image Generation
- * Uses Nano Banana Pro (gemini-2.5-pro-image-preview) with fallback to gemini-2.5-flash-image
+ * Uses Nano Banana Pro (gemini-3-pro-image-preview) with fallback to gemini-3-pro-image-preview
  */
 export const generateAIImage = functions.https.onRequest(async (req, res) => {
     // Handle CORS preflight
@@ -1442,10 +1442,10 @@ export const generateAIImage = functions.https.onRequest(async (req, res) => {
         };
 
         try {
-            // Attempt 1: Nano Banana Pro (gemini-2.5-pro-image-preview)
+            // Attempt 1: Nano Banana Pro (gemini-3-pro-image-preview)
             // High quality image generation - requires billing enabled
-            console.log('generateAIImage: Attempting gemini-2.5-pro-image-preview (Nano Banana Pro)');
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-image-preview:generateContent?key=${apiKey}`, {
+            console.log('generateAIImage: Attempting gemini-3-pro-image-preview (Nano Banana Pro)');
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1476,10 +1476,10 @@ export const generateAIImage = functions.https.onRequest(async (req, res) => {
             console.warn('generateAIImage: Nano Banana Pro error:', primaryError);
         }
 
-        // Attempt 2: Fallback to gemini-2.5-flash-image (Standard Quality)
+        // Attempt 2: Fallback to gemini-3-pro-image-preview (Standard Quality)
         try {
-            console.log('generateAIImage: Attempting gemini-2.5-flash-image fallback');
-            const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, {
+            console.log('generateAIImage: Attempting gemini-3-pro-image-preview fallback');
+            const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1498,7 +1498,7 @@ export const generateAIImage = functions.https.onRequest(async (req, res) => {
                 const data = await fallbackResponse.json();
                 const imageUrl = extractImageFromResponse(data);
                 if (imageUrl) {
-                    console.log('generateAIImage: Successfully generated image with gemini-2.5-flash-image');
+                    console.log('generateAIImage: Successfully generated image with gemini-3-pro-image-preview');
                     res.json({ imageUrl, isPlaceholder: false });
                     return;
                 }
@@ -1604,7 +1604,7 @@ async function generateImageEditPrompts(
     }
 
     const ai = await getGenAI();
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
     const prompt = `You are an expert photo editor specializing in aesthetic studio photography.
 
@@ -1672,7 +1672,7 @@ No markdown, no explanations - just the JSON array.`;
 }
 
 /**
- * Enhance a single image using Nano Banana Pro (gemini-2.5-pro-image-preview)
+ * Enhance a single image using Nano Banana Pro (gemini-3-pro-image-preview)
  * Uses image editing to preserve the subject while enhancing the aesthetic
  * Now with color palette matching for brand continuity
  */
@@ -1723,7 +1723,7 @@ Do NOT change the subject itself - only enhance the presentation and environment
 
         // Call Nano Banana Pro with the image for editing
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-image-preview:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1933,7 +1933,7 @@ Return ONLY a JSON object with this exact structure (no markdown, no explanation
     try {
         // Use gemini-2.0-flash-lite for speed and token efficiency
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2046,7 +2046,7 @@ Optional sections based on content: about, testimonials, features, gallery, faq,
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2187,7 +2187,7 @@ No explanation, no markdown code blocks - just raw HTML.`;
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2945,7 +2945,7 @@ ${siteIdentity.fullCopy?.slice(0, 3000) || 'No additional content'}
 
     try {
         // Call Gemini 2.5 Flash API with thinking
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2984,7 +2984,7 @@ ${siteIdentity.fullCopy?.slice(0, 3000) || 'No additional content'}
         console.warn('[PremiumGen v3.0] Gemini 2.5 Flash failed, falling back to 2.0 Flash:', error);
 
         // Fallback to Gemini 2.0 Flash
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3647,7 +3647,7 @@ async function generateTotalContentSite(
 
     try {
         // Call Gemini 2.5 Flash API with thinking
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3686,7 +3686,7 @@ async function generateTotalContentSite(
         console.warn('[TotalContent v4.0] Gemini 2.5 Flash failed, falling back to 2.0 Flash:', error);
 
         // Fallback to Gemini 2.0 Flash
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -4061,7 +4061,7 @@ IMPORTANT: All colors MUST be in hex format (#XXXXXX). All content should be REA
 
         // Use Gemini 3 Pro with Google Search grounding for best reasoning and multimodal analysis
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -4164,7 +4164,7 @@ ${currentCode ? `\n\nCURRENT CODE STATE (Do not lose this context):\n${currentCo
 
         // Use Gemini 3 Pro with system instruction and thinking for best reasoning
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -4264,7 +4264,7 @@ export const generateVibeImage = functions.runWith({
 
         // Use Gemini 3 Pro Image model for highest quality
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-image-preview:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

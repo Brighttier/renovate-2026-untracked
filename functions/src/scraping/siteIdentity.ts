@@ -922,7 +922,7 @@ async function analyzeVisualVibe(page: any): Promise<{ vibe: string; screenshot:
 
         // Send to Gemini for multimodal analysis
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
         const prompt = `Analyze this website screenshot and describe the brand's visual "vibe" in 2-3 sentences.
 

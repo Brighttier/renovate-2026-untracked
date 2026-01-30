@@ -87,7 +87,7 @@ exports.findBusinesses = functions.https.onRequest(async (req, res) => {
             return;
         }
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         const prompt = `Find 5-8 real local businesses in the "${category}" industry located in "${location}".
 For each business, provide:
 - id: a unique identifier (use a slug like "business-name-123")
@@ -142,7 +142,7 @@ exports.generateBlueprint = functions.https.onRequest(async (req, res) => {
             return;
         }
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         const systemInstruction = `You are a world-class creative director and conversion-focused UX strategist, specializing in premium landing pages for local businesses that compete with national brands.
 
 🎨 DESIGN PHILOSOPHY:
@@ -388,7 +388,7 @@ exports.editBlueprint = functions.https.onRequest(async (req, res) => {
         const { intent, confidence } = analyzeIntent(instruction);
         console.log(`editBlueprint: Intent="${intent}" (confidence=${confidence.toFixed(2)}), instruction="${instruction}"`);
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         // Build intent-aware prompt
         const intentInstructions = getIntentInstructions(intent);
         const prompt = `You are an expert website designer. Modify this website blueprint based on the user's instruction.
@@ -791,7 +791,7 @@ exports.generateSiteHTML = functions.https.onRequest(async (req, res) => {
         }
         const ai = await getGenAI();
         // Use Gemini 2.0 Flash Exp (most capable available model)
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         // Build rich context from research data
         let businessContext = '';
         if (researchData) {
@@ -1088,7 +1088,7 @@ exports.editSiteHTML = functions.https.onRequest(async (req, res) => {
             }
         }
         const ai = await getGenAI();
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         // Detect edit type for specialized handling
         const editType = detectEditType(instruction);
         console.log('editSiteHTML: Detected edit type:', editType);
@@ -1295,7 +1295,7 @@ IMPORTANT:
 });
 /**
  * Generate AI image using Gemini Image Generation
- * Uses Nano Banana Pro (gemini-2.5-pro-image-preview) with fallback to gemini-2.5-flash-image
+ * Uses Nano Banana Pro (gemini-3-pro-image-preview) with fallback to gemini-3-pro-image-preview
  */
 exports.generateAIImage = functions.https.onRequest(async (req, res) => {
     // Handle CORS preflight
@@ -1330,10 +1330,10 @@ exports.generateAIImage = functions.https.onRequest(async (req, res) => {
             return null;
         };
         try {
-            // Attempt 1: Nano Banana Pro (gemini-2.5-pro-image-preview)
+            // Attempt 1: Nano Banana Pro (gemini-3-pro-image-preview)
             // High quality image generation - requires billing enabled
-            console.log('generateAIImage: Attempting gemini-2.5-pro-image-preview (Nano Banana Pro)');
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-image-preview:generateContent?key=${apiKey}`, {
+            console.log('generateAIImage: Attempting gemini-3-pro-image-preview (Nano Banana Pro)');
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1361,10 +1361,10 @@ exports.generateAIImage = functions.https.onRequest(async (req, res) => {
         catch (primaryError) {
             console.warn('generateAIImage: Nano Banana Pro error:', primaryError);
         }
-        // Attempt 2: Fallback to gemini-2.5-flash-image (Standard Quality)
+        // Attempt 2: Fallback to gemini-3-pro-image-preview (Standard Quality)
         try {
-            console.log('generateAIImage: Attempting gemini-2.5-flash-image fallback');
-            const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, {
+            console.log('generateAIImage: Attempting gemini-3-pro-image-preview fallback');
+            const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1382,7 +1382,7 @@ exports.generateAIImage = functions.https.onRequest(async (req, res) => {
                 const data = await fallbackResponse.json();
                 const imageUrl = extractImageFromResponse(data);
                 if (imageUrl) {
-                    console.log('generateAIImage: Successfully generated image with gemini-2.5-flash-image');
+                    console.log('generateAIImage: Successfully generated image with gemini-3-pro-image-preview');
                     res.json({ imageUrl, isPlaceholder: false });
                     return;
                 }
@@ -1433,7 +1433,7 @@ async function generateImageEditPrompts(productImages, businessName, category, v
         return [];
     }
     const ai = await getGenAI();
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
     const prompt = `You are an expert photo editor specializing in aesthetic studio photography.
 
 For each product/service image below, generate a refined editing prompt that will transform amateur business photos into professional, aesthetic studio-quality images.
@@ -1496,7 +1496,7 @@ No markdown, no explanations - just the JSON array.`;
     }));
 }
 /**
- * Enhance a single image using Nano Banana Pro (gemini-2.5-pro-image-preview)
+ * Enhance a single image using Nano Banana Pro (gemini-3-pro-image-preview)
  * Uses image editing to preserve the subject while enhancing the aesthetic
  * Now with color palette matching for brand continuity
  */
@@ -1538,7 +1538,7 @@ Do NOT change the subject itself - only enhance the presentation and environment
         const base64Image = Buffer.from(imageBuffer).toString('base64');
         const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
         // Call Nano Banana Pro with the image for editing
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-image-preview:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1653,7 +1653,7 @@ Return ONLY a JSON object with this exact structure (no markdown, no explanation
 }`;
     try {
         // Use gemini-2.0-flash-lite for speed and token efficiency
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1753,7 +1753,7 @@ Return ONLY a JSON object (no markdown):
 Required sections: hero, services (if services exist), contact
 Optional sections based on content: about, testimonials, features, gallery, faq, cta`;
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1877,7 +1877,7 @@ ${sectionConfig.type === 'cta' ? `
 OUTPUT: Return ONLY the HTML for this section wrapped in a <section id="${sectionConfig.id}"> tag.
 No explanation, no markdown code blocks - just raw HTML.`;
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2553,7 +2553,7 @@ ${((_q = siteIdentity.fullCopy) === null || _q === void 0 ? void 0 : _q.slice(0,
     let thinkingOutput = '';
     try {
         // Call Gemini 2.5 Flash API with thinking
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2588,7 +2588,7 @@ ${((_q = siteIdentity.fullCopy) === null || _q === void 0 ? void 0 : _q.slice(0,
     catch (error) {
         console.warn('[PremiumGen v3.0] Gemini 2.5 Flash failed, falling back to 2.0 Flash:', error);
         // Fallback to Gemini 2.0 Flash
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3204,7 +3204,7 @@ async function generateTotalContentSite(dna) {
     let thinkingOutput = '';
     try {
         // Call Gemini 2.5 Flash API with thinking
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3239,7 +3239,7 @@ async function generateTotalContentSite(dna) {
     catch (error) {
         console.warn('[TotalContent v4.0] Gemini 2.5 Flash failed, falling back to 2.0 Flash:', error);
         // Fallback to Gemini 2.0 Flash
-        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+        const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=' + apiKey;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3572,7 +3572,7 @@ IMPORTANT: All colors MUST be in hex format (#XXXXXX). All content should be REA
             }
         }
         // Use Gemini 3 Pro with Google Search grounding for best reasoning and multimodal analysis
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -3661,7 +3661,7 @@ ${designBrief}
 ${currentCode ? `\n\nCURRENT CODE STATE (Do not lose this context):\n${currentCode}` : ''}
 `;
         // Use Gemini 3 Pro with system instruction and thinking for best reasoning
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -3742,7 +3742,7 @@ exports.generateVibeImage = functions.runWith({
         const enhancedPrompt = `${prompt}, photorealistic, 4k, high fidelity, professional photography, no text overlays`;
         console.log('[VibeCoder] Generating image for prompt:', enhancedPrompt === null || enhancedPrompt === void 0 ? void 0 : enhancedPrompt.substring(0, 100));
         // Use Gemini 3 Pro Image model for highest quality
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-image-preview:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

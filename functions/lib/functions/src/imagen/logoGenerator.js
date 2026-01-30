@@ -31,7 +31,7 @@ async function generateLogo(params) {
         const apiKey = await getGeminiApiKey();
         const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
         // Step 1: Use Gemini 2.0 Flash to craft optimal Imagen prompt
-        const promptDesigner = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const promptDesigner = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
         const promptDesignRequest = `You are a professional logo design expert specializing in ${style} brand identities.
 
 Create a detailed image generation prompt for a professional business logo with these specifications:
