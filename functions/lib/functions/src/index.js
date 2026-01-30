@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setupAdmin = exports.findLeadsWithMaps = exports.generateModernizedSite = exports.editSiteHTML = void 0;
+exports.setupAdmin = exports.getDomainDNS = exports.listGoDaddyDomains = exports.quickConnectDomain = exports.findLeadsWithMaps = exports.generateModernizedSite = exports.editSiteHTML = void 0;
 // CRITICAL: Import Firebase initialization FIRST
 require("./firebaseInit");
 // ============================================================================
@@ -10,6 +10,13 @@ var minimalExports_1 = require("./minimalExports");
 Object.defineProperty(exports, "editSiteHTML", { enumerable: true, get: function () { return minimalExports_1.editSiteHTML; } });
 Object.defineProperty(exports, "generateModernizedSite", { enumerable: true, get: function () { return minimalExports_1.generateModernizedSite; } });
 Object.defineProperty(exports, "findLeadsWithMaps", { enumerable: true, get: function () { return minimalExports_1.findLeadsWithMaps; } });
+// ============================================================================
+// GODADDY DOMAIN CONNECT
+// ============================================================================
+var quickConnect_1 = require("./godaddy/quickConnect");
+Object.defineProperty(exports, "quickConnectDomain", { enumerable: true, get: function () { return quickConnect_1.quickConnectDomain; } });
+Object.defineProperty(exports, "listGoDaddyDomains", { enumerable: true, get: function () { return quickConnect_1.listGoDaddyDomains; } });
+Object.defineProperty(exports, "getDomainDNS", { enumerable: true, get: function () { return quickConnect_1.getDomainDNS; } });
 // ============================================================================
 // SETUP FUNCTIONS (One-time use)
 // ============================================================================
