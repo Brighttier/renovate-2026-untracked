@@ -43,12 +43,29 @@ var editSiteHTMLStandalone_1 = require("./gemini/editSiteHTMLStandalone");
 Object.defineProperty(exports, "editSiteHTML", { enumerable: true, get: function () { return editSiteHTMLStandalone_1.editSiteHTML; } });
 // Lazy wrapper for generateModernizedSite
 const functions = __importStar(require("firebase-functions"));
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 exports.generateModernizedSite = functions.https.onRequest(async (req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders).status(204).send('');
+        return;
+    }
+    res.set(corsHeaders);
     // Lazy load the actual implementation only when called
     const { generateModernizedSite: actualFunction } = await Promise.resolve().then(() => __importStar(require('./gemini/index')));
     return actualFunction(req, res);
 });
 exports.findLeadsWithMaps = functions.https.onRequest(async (req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.set(corsHeaders).status(204).send('');
+        return;
+    }
+    res.set(corsHeaders);
     // Lazy load the actual implementation only when called
     const { findLeadsWithMaps: actualFunction } = await Promise.resolve().then(() => __importStar(require('./research/index')));
     return actualFunction(req, res);
