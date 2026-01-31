@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { WizardStep, BusinessCategory, Business, WebsiteBlueprint, Lead, LeadStatus, MarketplaceService, HostingConfig, AdminTab, PreviewDeployment, AIEditorMessage, AIEditorVersion, AIDeploymentStatus } from './types';
+import { WizardStep, BusinessCategory, Business, WebsiteBlueprint, Lead, LeadStatus, MarketplaceService, HostingConfig, AdminTab, PreviewDeployment, AIEditorMessage, AIEditorVersion, AIDeploymentStatus, AIEditorMessageAttachment } from './types';
 import { ICONS, MARKETPLACE_SERVICES, PLATFORM_PLANS, TOPUP_PACKS, INFRA_COST_PER_SITE, INFRA_COST_PER_EDIT, REFERRAL_REWARDS, STYLE_PRESETS } from './constants';
 import StepIndicator from './components/StepIndicator';
 import WebsiteRenderer from './components/WebsiteRenderer';
@@ -599,7 +599,7 @@ const App: React.FC = () => {
   };
 
   // New Vibe Editor Handlers
-  const handleVibeEditorSendMessage = async (text: string) => {
+  const handleVibeEditorSendMessage = async (text: string, attachments?: AIEditorMessageAttachment[]) => {
     if (!siteHTML && !selectedBusiness) return;
     if (availableEditTokens <= 0) {
       setUsageLimitType('edits');
@@ -607,14 +607,16 @@ const App: React.FC = () => {
       return;
     }
 
-    // Add user message to chat
+    // Add user message to chat (include attachment info if present)
     const userMessage: AIEditorMessage = {
       role: 'user',
       content: text,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      attachments: attachments
     };
     setAiChatMessages(prev => [...prev, userMessage]);
     setIsGenerating(true);
+    setGenerationProgress(0);
 
     try {
       // If no HTML yet, generate initial site via Site Modernization
@@ -627,16 +629,36 @@ const App: React.FC = () => {
           };
           setAiChatMessages(prev => [...prev, aiMessage]);
           setIsGenerating(false);
+          setGenerationProgress(0);
           return;
         }
 
-        const response = await modernizeSite({
-          sourceUrl: selectedBusiness.websiteUrl,
-          businessName: selectedBusiness.name,
-          category: category || 'General',
-          designStyle: 'auto',
-          preserveColors: true
-        });
+        // Start progress animation for website generation
+        setGenerationProgress(5);
+
+        // Simulate progress steps while waiting for API
+        const progressInterval = setInterval(() => {
+          setGenerationProgress(prev => {
+            if (prev < 20) return prev + 3;
+            if (prev < 40) return prev + 2;
+            if (prev < 70) return prev + 1;
+            if (prev < 85) return prev + 0.5;
+            return prev; // Stay at 85 until complete
+          });
+        }, 500);
+
+        let response;
+        try {
+          response = await modernizeSite({
+            sourceUrl: selectedBusiness.websiteUrl,
+            businessName: selectedBusiness.name,
+            category: category || 'General',
+            designStyle: 'auto',
+            preserveColors: true
+          });
+        } finally {
+          clearInterval(progressInterval);
+        }
 
         console.log("[App.tsx Vibe] HTML response length:", response.html?.length || 0);
         console.log("[App.tsx Vibe] HTML first 300 chars:", response.html?.substring(0, 300));
@@ -653,8 +675,12 @@ const App: React.FC = () => {
           };
           setAiChatMessages(prev => [...prev, errorMessage]);
           setIsGenerating(false);
+          setGenerationProgress(0);
           return;
         }
+
+        // Complete progress
+        setGenerationProgress(100);
 
         const newVersionId = `v-${Date.now()}`;
         const newVersion: AIEditorVersion = {
@@ -677,8 +703,28 @@ const App: React.FC = () => {
         };
         setAiChatMessages(prev => [...prev, aiMessage]);
       } else {
-        // Edit existing HTML
-        const response = await editSiteHTML(text, siteHTML, aiChatMessages);
+        // Edit existing HTML - add progress animation
+        setGenerationProgress(10);
+
+        // Progress animation for edits (faster since edits are quicker)
+        const editProgressInterval = setInterval(() => {
+          setGenerationProgress(prev => {
+            if (prev < 30) return prev + 5;
+            if (prev < 60) return prev + 3;
+            if (prev < 85) return prev + 1;
+            return prev; // Stay at 85 until complete
+          });
+        }, 300);
+
+        let response;
+        try {
+          response = await editSiteHTML(text, siteHTML, aiChatMessages, attachments);
+        } finally {
+          clearInterval(editProgressInterval);
+        }
+
+        // Complete progress
+        setGenerationProgress(100);
 
         if (response.html) {
           const newVersionId = `v-${Date.now()}`;
@@ -724,6 +770,8 @@ const App: React.FC = () => {
       setAiChatMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsGenerating(false);
+      // Reset progress after a short delay to show completion animation
+      setTimeout(() => setGenerationProgress(0), 500);
     }
   };
 
