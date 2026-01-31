@@ -241,6 +241,11 @@ export const Icons = {
       <path d="m6 6 12 12" />
     </LineIcon>
   ),
+  Square: (props: IconProps) => (
+    <LineIcon {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" stroke="none" />
+    </LineIcon>
+  ),
   Shield: (props: IconProps) => (
     <LineIcon {...props}>
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />

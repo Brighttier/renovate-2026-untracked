@@ -7,6 +7,7 @@ interface AIChatPanelProps {
   messages: AIEditorMessage[];
   isLoading: boolean;
   onSendMessage: (text: string, attachments?: AIEditorMessageAttachment[]) => void;
+  onStopGeneration?: () => void;
   deploymentStatus?: AIDeploymentStatus;
   businessName?: string;
   category?: string;
@@ -16,6 +17,7 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({
   messages,
   isLoading,
   onSendMessage,
+  onStopGeneration,
   deploymentStatus,
   businessName,
   category
@@ -402,14 +404,26 @@ const AIChatPanel: React.FC<AIChatPanelProps> = ({
                     {isListening ? <Icons.Loader size={18} className="animate-spin" /> : <Icons.Mic size={18} />}
                 </button>
 
-                {/* Send Button */}
-                <button
+                {/* Send / Stop Button */}
+                {isLoading ? (
+                  <button
+                    type="button"
+                    onClick={onStopGeneration}
+                    className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm"
+                    title="Stop Generation"
+                  >
+                    <Icons.Square size={16} />
+                  </button>
+                ) : (
+                  <button
                     type="submit"
-                    disabled={!inputValue.trim() || isLoading}
+                    disabled={!inputValue.trim() && !attachedImage}
                     className="p-2 bg-[#9B8CF7] hover:bg-[#8B5CF6] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors shadow-sm"
-                >
+                    title="Send Message"
+                  >
                     <Icons.Send size={16} />
-                </button>
+                  </button>
+                )}
             </div>
         </form>
         <div className="mt-2 text-center">

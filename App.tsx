@@ -143,6 +143,7 @@ const App: React.FC = () => {
   const [blueprint, setBlueprint] = useState<WebsiteBlueprint | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [selectedMarketplaceLead, setSelectedMarketplaceLead] = useState<Lead | null>(null);
@@ -732,6 +733,22 @@ const App: React.FC = () => {
       setSiteHTML(version.code);
       setCurrentVersionId(versionId);
     }
+  };
+
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+
+    // Add a message to indicate the generation was stopped
+    const stoppedMessage: AIEditorMessage = {
+      role: 'model',
+      content: 'Generation stopped. You can try again with a different request.',
+      timestamp: Date.now()
+    };
+    setAiChatMessages(prev => [...prev, stoppedMessage]);
   };
 
   const handleVibeElementSelect = (element: { tag: string; id?: string; className?: string }) => {
@@ -2197,6 +2214,7 @@ const App: React.FC = () => {
                         messages={aiChatMessages}
                         isLoading={isGenerating}
                         onSendMessage={handleVibeEditorSendMessage}
+                        onStopGeneration={handleStopGeneration}
                         deploymentStatus={aiDeploymentStatus}
                         businessName={selectedBusiness?.name}
                         category={category}
