@@ -35,10 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.editSiteHTML = void 0;
 /**
- * Standalone editSiteHTML function with lazy imports
+ * Standalone editSiteHTML function - 2nd Gen for better performance
  * Optimized for fast deployment initialization
  */
-const functions = __importStar(require("firebase-functions"));
+const https_1 = require("firebase-functions/v2/https");
 const storage_1 = require("firebase-admin/storage");
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -124,13 +124,25 @@ function detectEditType(instruction) {
         return 'typography';
     return 'general';
 }
-exports.editSiteHTML = functions
-    .runWith({
+/**
+ * editSiteHTML - 2nd Gen Function
+ *
+ * Configuration:
+ * - 2GB memory (enough for image processing)
+ * - 1 vCPU (fast AI response parsing)
+ * - 120s timeout (safety margin for image uploads)
+ * - Concurrency: 100 (many users editing simultaneously)
+ * - Faster cold starts than 1st gen
+ */
+exports.editSiteHTML = (0, https_1.onRequest)({
     timeoutSeconds: 120,
-    memory: '1GB',
-})
-    .https.onRequest(async (req, res) => {
-    // Handle CORS preflight
+    memory: '2GiB',
+    cpu: 1,
+    concurrency: 100,
+    region: 'us-central1',
+    cors: true,
+}, async (req, res) => {
+    // Handle CORS preflight (backup - cors: true should handle this)
     if (req.method === 'OPTIONS') {
         res.set(corsHeaders).status(204).send('');
         return;
@@ -245,7 +257,7 @@ Return the changes as JSON.`;
             html: updatedHtml,
             thinking: aiResponse.thinking || 'Updated the website',
             text: aiResponse.thinking || 'Done! Changes applied.',
-            uploadedImages: uploadedImageUrls, // Return URLs so frontend knows what was uploaded
+            uploadedImages: uploadedImageUrls,
         });
     }
     catch (error) {

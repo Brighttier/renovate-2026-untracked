@@ -1,8 +1,8 @@
 /**
- * Standalone editSiteHTML function with lazy imports
+ * Standalone editSiteHTML function - 2nd Gen for better performance
  * Optimized for fast deployment initialization
  */
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
 import { getStorage } from 'firebase-admin/storage';
 
 const corsHeaders = {
@@ -99,65 +99,79 @@ function detectEditType(instruction: string): string {
   return 'general';
 }
 
-export const editSiteHTML = functions
-  .runWith({
+/**
+ * editSiteHTML - 2nd Gen Function
+ *
+ * Configuration:
+ * - 2GB memory (enough for image processing)
+ * - 1 vCPU (fast AI response parsing)
+ * - 120s timeout (safety margin for image uploads)
+ * - Concurrency: 100 (many users editing simultaneously)
+ * - Faster cold starts than 1st gen
+ */
+export const editSiteHTML = onRequest(
+  {
     timeoutSeconds: 120,
-    memory: '1GB',
-  })
-  .https.onRequest(async (req, res) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    res.set(corsHeaders).status(204).send('');
-    return;
-  }
-
-  res.set(corsHeaders);
-
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
-  try {
-    const { instruction, currentHTML, attachments } = req.body;
-
-    if (!instruction || !currentHTML) {
-      res.status(400).json({ error: 'instruction and currentHTML are required' });
+    memory: '2GiB',
+    cpu: 1,
+    concurrency: 100,
+    region: 'us-central1',
+    cors: true,
+  },
+  async (req, res) => {
+    // Handle CORS preflight (backup - cors: true should handle this)
+    if (req.method === 'OPTIONS') {
+      res.set(corsHeaders).status(204).send('');
       return;
     }
 
-    // Load dependencies only when function is called
-    const ai = await getGenAI();
-    const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
+    res.set(corsHeaders);
 
-    const editType = detectEditType(instruction);
-    console.log('editSiteHTML: Detected edit type:', editType);
-    console.log('editSiteHTML: Input HTML length:', currentHTML.length);
-    console.log('editSiteHTML: Attachments count:', attachments?.length || 0);
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
 
-    // Upload attachments to Firebase Storage and get URLs
-    const uploadedImageUrls: string[] = [];
-    if (attachments && attachments.length > 0) {
-      for (const att of attachments) {
-        if (att.base64Data && att.mimeType) {
-          try {
-            const url = await uploadImageToStorage(
-              att.base64Data,
-              att.mimeType,
-              att.fileName
-            );
-            uploadedImageUrls.push(url);
-          } catch (uploadError) {
-            console.error('editSiteHTML: Failed to upload image:', uploadError);
+    try {
+      const { instruction, currentHTML, attachments } = req.body;
+
+      if (!instruction || !currentHTML) {
+        res.status(400).json({ error: 'instruction and currentHTML are required' });
+        return;
+      }
+
+      // Load dependencies only when function is called
+      const ai = await getGenAI();
+      const model = ai.getGenerativeModel({ model: 'gemini-3-pro-preview' });
+
+      const editType = detectEditType(instruction);
+      console.log('editSiteHTML: Detected edit type:', editType);
+      console.log('editSiteHTML: Input HTML length:', currentHTML.length);
+      console.log('editSiteHTML: Attachments count:', attachments?.length || 0);
+
+      // Upload attachments to Firebase Storage and get URLs
+      const uploadedImageUrls: string[] = [];
+      if (attachments && attachments.length > 0) {
+        for (const att of attachments) {
+          if (att.base64Data && att.mimeType) {
+            try {
+              const url = await uploadImageToStorage(
+                att.base64Data,
+                att.mimeType,
+                att.fileName
+              );
+              uploadedImageUrls.push(url);
+            } catch (uploadError) {
+              console.error('editSiteHTML: Failed to upload image:', uploadError);
+            }
           }
         }
       }
-    }
 
-    // Build image instruction if images were uploaded
-    let imageInstruction = '';
-    if (uploadedImageUrls.length > 0) {
-      imageInstruction = `
+      // Build image instruction if images were uploaded
+      let imageInstruction = '';
+      if (uploadedImageUrls.length > 0) {
+        imageInstruction = `
 
 # UPLOADED IMAGE(S) - USE THESE EXACT URLs
 The user has uploaded ${uploadedImageUrls.length} image(s). You MUST use these exact URLs in the HTML:
@@ -174,10 +188,10 @@ Example change for logo replacement:
   "original": "<img src=\"OLD_URL\" class=\"h-8 w-auto\" alt=\"Logo\">",
   "replacement": "<img src=\"${uploadedImageUrls[0]}\" class=\"h-8 w-auto\" alt=\"Logo\">"
 }`;
-    }
+      }
 
-    // Build the diff-based prompt
-    const prompt = `${DIFF_EDITING_INSTRUCTION}
+      // Build the diff-based prompt
+      const prompt = `${DIFF_EDITING_INSTRUCTION}
 ${imageInstruction}
 
 # USER REQUEST
@@ -190,62 +204,63 @@ ${currentHTML.substring(0, 20000)}
 
 Return the changes as JSON.`;
 
-    const parts: any[] = [{ text: prompt }];
+      const parts: any[] = [{ text: prompt }];
 
-    // Also send the image to AI for visual context (helps AI understand what image is being added)
-    if (attachments && attachments.length > 0) {
-      for (const att of attachments) {
-        if (att.base64Data && att.mimeType) {
-          parts.push({
-            inlineData: {
-              mimeType: att.mimeType,
-              data: att.base64Data,
-            },
-          });
+      // Also send the image to AI for visual context (helps AI understand what image is being added)
+      if (attachments && attachments.length > 0) {
+        for (const att of attachments) {
+          if (att.base64Data && att.mimeType) {
+            parts.push({
+              inlineData: {
+                mimeType: att.mimeType,
+                data: att.base64Data,
+              },
+            });
+          }
         }
       }
-    }
 
-    const result = await model.generateContent(parts);
-    const responseText = result.response.text();
-    console.log('editSiteHTML: AI response length:', responseText.length);
+      const result = await model.generateContent(parts);
+      const responseText = result.response.text();
+      console.log('editSiteHTML: AI response length:', responseText.length);
 
-    // Try to extract JSON
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('AI did not return valid JSON');
-    }
+      // Try to extract JSON
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('AI did not return valid JSON');
+      }
 
-    const aiResponse = JSON.parse(jsonMatch[0]);
-    let updatedHtml = currentHTML;
+      const aiResponse = JSON.parse(jsonMatch[0]);
+      let updatedHtml = currentHTML;
 
-    // Apply changes
-    if (aiResponse.changes && Array.isArray(aiResponse.changes)) {
-      for (const change of aiResponse.changes) {
-        if (change.original && change.replacement) {
-          updatedHtml = updatedHtml.replace(change.original, change.replacement);
+      // Apply changes
+      if (aiResponse.changes && Array.isArray(aiResponse.changes)) {
+        for (const change of aiResponse.changes) {
+          if (change.original && change.replacement) {
+            updatedHtml = updatedHtml.replace(change.original, change.replacement);
+          }
         }
       }
-    }
 
-    // Fallback: if AI returned full HTML instead of changes
-    if (!aiResponse.changes && responseText.includes('<!DOCTYPE html>')) {
-      const htmlMatch = responseText.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
-      if (htmlMatch) {
-        updatedHtml = htmlMatch[0];
+      // Fallback: if AI returned full HTML instead of changes
+      if (!aiResponse.changes && responseText.includes('<!DOCTYPE html>')) {
+        const htmlMatch = responseText.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+        if (htmlMatch) {
+          updatedHtml = htmlMatch[0];
+        }
       }
-    }
 
-    res.json({
-      html: updatedHtml,
-      thinking: aiResponse.thinking || 'Updated the website',
-      text: aiResponse.thinking || 'Done! Changes applied.',
-      uploadedImages: uploadedImageUrls, // Return URLs so frontend knows what was uploaded
-    });
-  } catch (error: any) {
-    console.error('editSiteHTML error:', error);
-    res.status(500).json({
-      error: error.message || 'Failed to edit HTML',
-    });
+      res.json({
+        html: updatedHtml,
+        thinking: aiResponse.thinking || 'Updated the website',
+        text: aiResponse.thinking || 'Done! Changes applied.',
+        uploadedImages: uploadedImageUrls,
+      });
+    } catch (error: any) {
+      console.error('editSiteHTML error:', error);
+      res.status(500).json({
+        error: error.message || 'Failed to edit HTML',
+      });
+    }
   }
-});
+);
