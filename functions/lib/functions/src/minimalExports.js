@@ -41,7 +41,9 @@ exports.findLeadsWithMaps = exports.generateModernizedSite = exports.editSiteHTM
 // Export only editSiteHTML with lazy imports
 var editSiteHTMLStandalone_1 = require("./gemini/editSiteHTMLStandalone");
 Object.defineProperty(exports, "editSiteHTML", { enumerable: true, get: function () { return editSiteHTMLStandalone_1.editSiteHTML; } });
-// Lazy wrapper for generateModernizedSite
+// 2nd Gen Functions for maximum performance
+const https_1 = require("firebase-functions/v2/https");
+// 1st Gen Functions for legacy compatibility
 const functions = __importStar(require("firebase-functions"));
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -49,20 +51,24 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 /**
- * generateModernizedSite - Maximum Performance Configuration
- * - 8GB memory (max for 1st gen, gives 2 vCPU automatically)
- * - 540s timeout (9 minutes max)
+ * generateModernizedSite - 2nd Gen Function (Maximum Performance)
  *
- * Note: To upgrade to 2nd Gen (16GB, 4 vCPU), you must first delete
- * the existing function in Firebase Console, then redeploy.
+ * Configuration:
+ * - 16GB memory (max for 2nd gen)
+ * - 4 vCPU (max for 2nd gen)
+ * - 540s timeout (9 minutes)
+ * - Concurrency: 80 (handle multiple requests per warm instance)
+ * - Faster cold starts than 1st gen
  */
-exports.generateModernizedSite = functions
-    .runWith({
-    timeoutSeconds: 540, // 9 minutes max for deep scraping + image generation + HTML generation
-    memory: '8GB', // Maximum memory for 1st gen functions (gives 2 vCPU)
-})
-    .https.onRequest(async (req, res) => {
-    // Handle CORS preflight
+exports.generateModernizedSite = (0, https_1.onRequest)({
+    timeoutSeconds: 540, // 9 minutes max
+    memory: '16GiB', // Maximum memory for 2nd gen
+    cpu: 4, // Maximum CPU for 2nd gen
+    concurrency: 80, // Handle multiple requests per warm instance
+    region: 'us-central1',
+    cors: true, // Enable CORS automatically
+}, async (req, res) => {
+    // Handle CORS preflight (backup - cors: true should handle this)
     if (req.method === 'OPTIONS') {
         res.set(corsHeaders).status(204).send('');
         return;
@@ -72,6 +78,7 @@ exports.generateModernizedSite = functions
     const { generateModernizedSiteHandler } = await Promise.resolve().then(() => __importStar(require('./gemini/index')));
     return generateModernizedSiteHandler(req, res);
 });
+// Keep findLeadsWithMaps as 1st gen for now
 exports.findLeadsWithMaps = functions.https.onRequest(async (req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
