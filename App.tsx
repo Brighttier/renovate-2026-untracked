@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { WizardStep, BusinessCategory, Business, WebsiteBlueprint, Lead, LeadStatus, MarketplaceService, HostingConfig, AdminTab, PreviewDeployment, AIEditorMessage, AIEditorVersion, AIDeploymentStatus, AIEditorMessageAttachment } from './types';
-import { ICONS, MARKETPLACE_SERVICES, PLATFORM_PLANS, TOPUP_PACKS, INFRA_COST_PER_SITE, INFRA_COST_PER_EDIT, REFERRAL_REWARDS, STYLE_PRESETS } from './constants';
+import { ICONS, MARKETPLACE_SERVICES, MARKETPLACE_PRICING, PLATFORM_PLANS, TOPUP_PACKS, INFRA_COST_PER_SITE, INFRA_COST_PER_EDIT, REFERRAL_REWARDS, STYLE_PRESETS } from './constants';
 import StepIndicator from './components/StepIndicator';
 import WebsiteRenderer from './components/WebsiteRenderer';
 import CodePreview from './components/CodePreview';
@@ -24,34 +24,10 @@ import AISandbox from './components/AISandbox';
 import AIChatPanel from './components/AIChatPanel';
 import { VibeEditorUI } from './components/VibeEditorUI';
 import { stripeService } from './services/stripeService';
+import { marketplaceService } from './services/marketplaceService';
 
-const DEMO_LEADS: Lead[] = [
-  {
-    id: 'demo-1',
-    business: { id: 'biz-1', name: 'Elite Dental Care', rating: 4.8, address: 'Austin, TX', websiteStatus: 'Outdated', websiteUrl: 'https://www.elitedentalaustin.com' },
-    status: 'Paid',
-    projectValue: 499,
-    monthlyValue: 29,
-    date: '2 days ago',
-    requestedServices: ['chatbot'],
-    hosting: {
-      status: 'Live',
-      subdomain: 'elite-dental-tx.renovatemysite.app',
-      customDomain: 'elitedentalaustin.com',
-      ssl: true,
-      provider: 'Firebase'
-    },
-    blueprint: {
-      brand: { primaryColor: '#10b981', secondaryColor: '#059669', fontFamily: 'Outfit', tone: 'Professional' },
-      sections: [
-        { id: 'h1', type: 'hero', title: 'Elite Dental', content: 'Premium care for your smile.', cta: 'Book Now', imagePrompt: 'Dental office interior luxury' }
-      ],
-      plugins: [
-        { id: 'chatbot', config: { greeting: 'Welcome to Elite Dental. How can we help you smile today?' } }
-      ]
-    }
-  }
-];
+// No demo leads - marketplace shows only real leads created by the user
+const DEMO_LEADS: Lead[] = [];
 
 const PROMPT_RECIPES = [
   {
@@ -812,29 +788,29 @@ const App: React.FC = () => {
   };
 
   const handleOrderService = async (service: MarketplaceService) => {
-    if (!selectedMarketplaceLead || !selectedMarketplaceLead.blueprint) return;
+    if (!selectedMarketplaceLead || !selectedMarketplaceLead.blueprint) {
+      alert('Please select a lead with a generated website first.');
+      return;
+    }
+
+    // Use the hosting subdomain or lead id as the siteId
+    const siteId = selectedMarketplaceLead.hosting?.subdomain || selectedMarketplaceLead.id;
 
     setIsInjecting(true);
     try {
-      const updatedBlueprint = await injectPlugin(service.id, selectedMarketplaceLead.blueprint);
-
-      setLeads(prev => prev.map(l =>
-        l.id === selectedMarketplaceLead.id
-          ? { ...l, blueprint: updatedBlueprint, requestedServices: [...(l.requestedServices || []), service.id] }
-          : l
-      ));
-
-      setSelectedMarketplaceLead({
-        ...selectedMarketplaceLead,
-        blueprint: updatedBlueprint,
-        requestedServices: [...(selectedMarketplaceLead.requestedServices || []), service.id]
+      // Redirect to Stripe checkout for the marketplace service
+      await marketplaceService.redirectToCheckout({
+        serviceId: service.id as 'chatbot' | 'booking' | 'simple-crm' | 'bundle',
+        leadId: selectedMarketplaceLead.id,
+        siteId: siteId,
+        businessName: selectedMarketplaceLead.business?.name || 'Business',
+        successUrl: `${window.location.origin}?marketplace=success&service=${service.id}`,
+        cancelUrl: `${window.location.origin}?marketplace=cancelled`,
       });
-
-      alert(`Success! '${service.title}' has been AI-configured and injected into the client's website.`);
-    } catch (error) {
-      console.error("Plugin injection failed:", error);
-      alert("Failed to inject the service plugin.");
-    } finally {
+      // User will be redirected to Stripe, no need to update state here
+    } catch (error: any) {
+      console.error("Marketplace checkout failed:", error);
+      alert(error.message || "Failed to start checkout. Please try again.");
       setIsInjecting(false);
     }
   };
@@ -3615,14 +3591,28 @@ const App: React.FC = () => {
                   {!selectedMarketplaceLead ? (
                     <div className="text-center px-6">
                       <h1 className="text-5xl font-bold mb-16 headline-font">Select <span className="headline-serif italic font-normal text-[#9B8CF7]">Client</span></h1>
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                        {leads.map(lead => (
-                          <button key={lead.id} onClick={() => setSelectedMarketplaceLead(lead)} className="p-10 bg-white/40 border border-[#9B8CF7]/10 rounded-3xl hover:border-[#9B8CF7]/50 transition-all">
-                            <h3 className="text-xl font-bold mb-2 headline-font">{lead.business.name}</h3>
-                            <div className="text-sm text-[#6B6478] font-semibold">Current Lead Status: {lead.status}</div>
+                      {leads.filter(l => l.blueprint).length === 0 ? (
+                        <div className="max-w-md mx-auto p-10 bg-white/40 border border-[#9B8CF7]/10 rounded-3xl">
+                          <Icons.Sparkles size={48} className="mx-auto mb-6 text-[#9B8CF7]" />
+                          <h3 className="text-xl font-bold mb-4 headline-font">No Clients Yet</h3>
+                          <p className="text-[#6B6478] text-sm mb-8">Generate a website for a client first, then come back here to add premium services like AI Chatbot, Booking, and CRM.</p>
+                          <button onClick={() => setStep(WizardStep.CATEGORY)} className="px-8 py-4 bg-[#9B8CF7] text-white rounded-2xl font-semibold text-sm tracking-widest hover:bg-[#8B7CE7] transition-all">
+                            Find Your First Client
                           </button>
-                        ))}
-                      </div>
+                        </div>
+                      ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                          {leads.filter(l => l.blueprint).map(lead => (
+                            <button key={lead.id} onClick={() => setSelectedMarketplaceLead(lead)} className="p-10 bg-white/40 border border-[#9B8CF7]/10 rounded-3xl hover:border-[#9B8CF7]/50 transition-all">
+                              <h3 className="text-xl font-bold mb-2 headline-font">{lead.business.name}</h3>
+                              <div className="text-sm text-[#6B6478] font-semibold">Status: {lead.status}</div>
+                              {lead.requestedServices && lead.requestedServices.length > 0 && (
+                                <div className="mt-2 text-xs text-[#9B8CF7]">{lead.requestedServices.length} service(s) active</div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="max-w-6xl mx-auto text-left px-6">
@@ -3643,22 +3633,31 @@ const App: React.FC = () => {
                         {MARKETPLACE_SERVICES.map(service => {
                           const Icon = Icons[service.icon as keyof typeof Icons];
                           const isInstalled = selectedMarketplaceLead.requestedServices?.includes(service.id);
+                          const pricing = MARKETPLACE_PRICING[service.id as keyof typeof MARKETPLACE_PRICING];
                           return (
                             <div key={service.id} className={`p-10 bg-white/40 border rounded-3xl flex flex-col shadow-2xl relative transition-all ${isInstalled ? 'border-[#9B8CF7]/50' : 'border-[#9B8CF7]/10'}`}>
                               <div className="mb-8">{Icon ? <Icon size={48} /> : null}</div>
                               <h3 className="text-2xl font-bold mb-4 headline-font">{service.title}</h3>
                               <p className="text-[#6B6478] text-sm font-light mb-8 flex-1 leading-relaxed">{service.description}</p>
                               <div className="mt-auto pt-8 border-t border-[#9B8CF7]/10">
-                                <div className="flex justify-between items-center mb-6">
-                                  <span className="text-xs font-semibold text-[#6B6478]">Investment</span>
-                                  <span className="text-2xl font-bold text-[#1E1B4B]">${service.suggestedPrice}</span>
+                                <div className="mb-4">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="text-xs font-semibold text-[#6B6478]">Setup Fee</span>
+                                    <span className="text-xl font-bold text-[#1E1B4B]">${pricing?.setupFee || service.suggestedPrice}</span>
+                                  </div>
+                                  {pricing?.monthly && (
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-xs font-semibold text-[#6B6478]">Then</span>
+                                      <span className="text-sm font-medium text-[#9B8CF7]">${pricing.monthly}/month</span>
+                                    </div>
+                                  )}
                                 </div>
                                 <button
                                   onClick={() => handleOrderService(service)}
                                   disabled={isInjecting || isInstalled}
                                   className={`w-full py-5 rounded-2xl font-semibold text-sm tracking-widest shadow-xl transition-all ${isInstalled ? 'bg-[#9B8CF7]/20 text-[#B5A8E0] cursor-default' : 'bg-[#9B8CF7] text-white hover:bg-[#9B8CF7]'}`}
                                 >
-                                  {isInstalled ? 'Service Active ✓' : (isInjecting ? 'Configuring...' : 'Order for Client')}
+                                  {isInstalled ? 'Service Active ✓' : (isInjecting ? 'Processing...' : 'Add to Client')}
                                 </button>
                               </div>
                             </div>
