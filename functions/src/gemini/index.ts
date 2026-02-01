@@ -2,6 +2,8 @@ import * as functions from 'firebase-functions';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { deepScrapeSite, type SiteIdentity as FullSiteIdentity } from '../scraping/visionOnlyScraper';
+import { autoSelectTemplate, getDesignTemplate, buildTemplatePrompt } from '../templates';
+import type { DesignTemplateId } from '../../../types';
 
 const secretClient = new SecretManagerServiceClient();
 let genAI: GoogleGenerativeAI | null = null;
@@ -2997,15 +2999,29 @@ Return ONLY the HTML body content wrapped in [CODE_UPDATE]...[/CODE_UPDATE]
 `;
 
 /**
- * Generate premium modernized site HTML using Gemini 2.5 Flash with Thinking
- * Uses placeholder system for reliable asset injection
+ * Generate premium modernized site HTML using Gemini 3 Pro with Thinking
+ * Uses template system for design variety (v5.0)
  */
 async function generatePremiumModernizedSite(
     siteIdentity: FullSiteIdentity,
     category: string,
-    generatedImages?: GeneratedImages
-): Promise<{ html: string; thinking: string }> {
+    generatedImages?: GeneratedImages,
+    requestedTemplateId?: DesignTemplateId
+): Promise<{ html: string; thinking: string; templateUsed: DesignTemplateId }> {
     const apiKey = await getGeminiApiKey();
+
+    // Select template based on category and vibe (or use requested template)
+    const selectedTemplateId = requestedTemplateId || autoSelectTemplate({
+        category,
+        visualVibe: siteIdentity.visualVibe,
+        preferDarkMode: false,
+    });
+
+    const template = getDesignTemplate(selectedTemplateId);
+    console.log(`[PremiumGen v5.0] Using template: ${template.name} (${selectedTemplateId})`);
+
+    // Build template-specific design instructions
+    const templateInstructions = buildTemplatePrompt(template);
 
     // Build content summary for the prompt
     const testimonialNames = siteIdentity.testimonials?.map(t => t.author).join(', ') || 'none';
@@ -3126,9 +3142,10 @@ ${siteIdentity.fullCopy?.slice(0, 3000) || 'No additional content'}
 7. If extractedFacts has "Est." dates or awards, use them as trust signals
 8. ${hasGeneratedImages ? 'CRITICAL: The hero section MUST use the AI-generated hero image URL. Service sections MUST use service image URLs.' : 'Use placeholder images that will be injected later'}`;
 
-    const fullPrompt = PREMIUM_MODERNIZATION_PROMPT + siteDataSection;
+    // Combine template instructions with base prompt and site data
+    const fullPrompt = PREMIUM_MODERNIZATION_PROMPT + '\n\n' + templateInstructions + '\n\n' + siteDataSection;
 
-    console.log('[PremiumGen v3.0] Generating with Gemini 2.5 Flash + Thinking...');
+    console.log('[PremiumGen v5.0] Generating with Gemini 3 Pro + Template: ' + template.name);
 
     // Try Gemini 2.5 Flash with thinking first, fall back to 2.0 Flash
     let responseText = '';
@@ -3269,7 +3286,8 @@ ${siteIdentity.fullCopy?.slice(0, 3000) || 'No additional content'}
 
     return {
         html: processedHtml,
-        thinking: thinkingOutput || 'Deep-Multimodal Pipeline v3.0 with Vision API enrichment'
+        thinking: thinkingOutput || `Template: ${template.name} - Deep-Multimodal Pipeline v5.0`,
+        templateUsed: selectedTemplateId
     };
 }
 
@@ -3300,8 +3318,9 @@ export async function generateModernizedSiteHandler(
             sourceUrl,
             businessName,
             category,
-            forceRefresh = false
-        }: ModernizationRequest = req.body;
+            forceRefresh = false,
+            templateId  // NEW: Optional template selection
+        }: ModernizationRequest & { templateId?: DesignTemplateId } = req.body;
 
         // Note: forceRefresh reserved for future caching implementation in deep scraper
         void forceRefresh;
@@ -3388,11 +3407,12 @@ export async function generateModernizedSiteHandler(
         }
 
         // 3. Generate premium modernized site with Gemini 3 Pro + Thinking
-        console.log('[ModernizeSite v3.0] Starting Gemini 3 Pro generation with thinking...');
-        const { html, thinking } = await generatePremiumModernizedSite(
+        console.log('[ModernizeSite v5.0] Starting Gemini 3 Pro generation with template system...');
+        const { html, thinking, templateUsed } = await generatePremiumModernizedSite(
             siteIdentity,
             category || 'general',
-            generatedImages
+            generatedImages,
+            templateId
         );
 
         console.log('[ModernizeSite v3.0] Generation complete, HTML length:', html.length);
@@ -3416,9 +3436,10 @@ export async function generateModernizedSiteHandler(
         res.json({
             html,
             siteIdentity: identityForResponse,
-            designStyle: 'premium-modern',
+            designStyle: templateUsed,
+            templateName: getDesignTemplate(templateUsed).name,
             thinking,
-            pipelineVersion: '3.0-deep-multimodal'
+            pipelineVersion: '5.0-template-system'
         });
 
     } catch (error: any) {

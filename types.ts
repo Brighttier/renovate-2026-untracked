@@ -605,6 +605,156 @@ export interface WebsiteFooter {
   showNewsletter?: boolean;
 }
 
+// ==========================================
+// DESIGN TEMPLATE SYSTEM (v5.0)
+// ==========================================
+
+/**
+ * Design Template ID - 12 distinct visual styles
+ */
+export type DesignTemplateId =
+  | 'glass-aurora'       // Glassmorphism + dark gradients (Tech/SaaS)
+  | 'bold-brutalist'     // High contrast, geometric (Creative/Design)
+  | 'soft-organic'       // Rounded, natural colors (Wellness/Spa)
+  | 'dark-luxury'        // Dark + gold accents (Luxury/Finance)
+  | 'clean-minimal'      // Maximum whitespace (Architecture/Photography)
+  | 'bento-playful'      // Asymmetric cards (Retail/E-commerce)
+  | 'editorial-magazine' // Serif headlines, editorial (Media/Publishing)
+  | 'neon-cyber'         // Neon accents, futuristic (Gaming/Tech)
+  | 'warm-artisan'       // Earthy, handcrafted (Restaurant/Cafe)
+  | 'corporate-trust'    // Professional blues (Legal/Healthcare)
+  | 'vibrant-startup'    // Gradient CTAs, energetic (Startups)
+  | 'retro-nostalgic';   // Vintage colors (Boutique/Craft)
+
+/**
+ * Typography configuration for a template
+ */
+export interface TemplateTypography {
+  hero: string;          // Hero headline size: "text-5xl md:text-6xl lg:text-7xl"
+  h1: string;            // Section headers
+  h2: string;            // Card headers
+  h3: string;            // Subheadings
+  body: string;          // Paragraph text
+  small: string;         // Captions, labels
+  lineHeight: string;    // "leading-tight" | "leading-relaxed"
+  letterSpacing: string; // "tracking-tight" | "tracking-wide"
+}
+
+/**
+ * Spacing rhythm configuration
+ */
+export interface TemplateSpacing {
+  sectionPadding: string;   // "py-24 md:py-32" or "py-32 md:py-48"
+  elementGap: string;       // "space-y-6" | "space-y-8"
+  containerWidth: string;   // "max-w-6xl" | "max-w-7xl"
+  containerPadding: string; // "px-6 lg:px-8"
+}
+
+/**
+ * Visual elements configuration
+ */
+export interface TemplateVisual {
+  borderRadius: string;  // "rounded-3xl" | "rounded-none" | "rounded-lg"
+  shadowDepth: string;   // "shadow-none" | "shadow-lg" | "shadow-2xl"
+  borderStyle: string;   // "border-none" | "border border-gray-200"
+  cardStyle: string;     // Full card class string
+  buttonStyle: string;   // Full button class string
+  imageStyle: string;    // Image treatment classes
+}
+
+/**
+ * Animation configuration
+ */
+export interface TemplateAnimation {
+  entranceAnimation: string;  // "fadeInUp" | "slideInLeft" | "scaleIn"
+  duration: string;           // "0.6s" | "0.8s" | "1.2s"
+  easing: string;             // "ease-out" | "cubic-bezier(...)"
+  staggerDelay: number;       // Base delay in ms (100, 150, 200)
+  hoverEffect: string;        // "hover:scale-105" | "hover:-translate-y-2"
+}
+
+/**
+ * Color strategy configuration
+ */
+export interface TemplateColor {
+  backgroundMode: 'light' | 'dark' | 'mixed';
+  heroBackground: string;     // Hero section background
+  sectionAlternation: boolean; // Alternate light/dark sections
+  accentUsage: 'buttons-only' | 'buttons-and-highlights' | 'everywhere';
+  gradientStyle: string | null; // Gradient definition or null
+  glassEffect: boolean;       // Enable glassmorphism
+  glowEffect: boolean;        // Enable glow shadows
+}
+
+/**
+ * Layout patterns configuration
+ */
+export interface TemplateLayout {
+  heroLayout: 'centered' | 'left-aligned' | 'split' | 'fullscreen-image';
+  servicesLayout: 'grid-3' | 'grid-2' | 'bento' | 'list' | 'cards-stacked';
+  testimonialsLayout: 'carousel' | 'grid' | 'single-featured' | 'masonry';
+  ctaLayout: 'centered' | 'left-with-image' | 'full-width-gradient';
+  navbarStyle: 'transparent' | 'solid' | 'glass' | 'floating';
+  footerStyle: 'minimal' | 'columns' | 'centered' | 'dark-gradient';
+}
+
+/**
+ * Font pairing configuration
+ */
+export interface TemplateFonts {
+  headlineFont: string;    // "Inter" | "Playfair Display" | "Space Grotesk"
+  bodyFont: string;        // "Inter" | "DM Sans"
+  headlineWeight: string;  // "font-bold" | "font-black"
+  bodyWeight: string;      // "font-normal" | "font-light"
+  googleFontsUrl: string;  // Full import URL
+}
+
+/**
+ * Complete Design Template Definition
+ */
+export interface DesignTemplate {
+  id: DesignTemplateId;
+  name: string;           // Display name: "Glass Aurora"
+  description: string;    // One-liner description
+
+  // Core design tokens
+  typography: TemplateTypography;
+  spacing: TemplateSpacing;
+  visual: TemplateVisual;
+  animation: TemplateAnimation;
+  color: TemplateColor;
+  layout: TemplateLayout;
+  fonts: TemplateFonts;
+
+  // Section ordering preference
+  sectionOrder: string[];
+
+  // Auto-selection scoring (0-1 per industry)
+  industryScores: Record<string, number>;
+
+  // Vibe keywords for matching
+  vibeKeywords: string[];
+
+  // Trend metadata
+  trendYear?: number;
+  trendTags?: string[];
+
+  // AI prompt fragment (injected into generation)
+  promptFragment: string;
+}
+
+/**
+ * Template selection request
+ */
+export interface TemplateSelectionRequest {
+  userSelected?: DesignTemplateId;
+  category?: string;
+  visualVibe?: string;
+  brandPersonality?: string;
+  preferDarkMode?: boolean;
+  preferMinimal?: boolean;
+}
+
 export interface WebsiteBlueprint {
   brand: {
     logoUrl?: string;

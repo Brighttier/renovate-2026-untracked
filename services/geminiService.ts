@@ -724,6 +724,7 @@ export interface ModernizeSiteRequest {
   designStyle?: ModernizationStyle;
   preserveColors?: boolean;
   forceRefresh?: boolean;
+  templateId?: string; // Design template ID for variety
 }
 
 /**
@@ -766,14 +767,15 @@ export const modernizeSite = async (
   try {
     console.log("[V3.0] Modernizing site with Gemini-only scraper:", request.sourceUrl);
 
-    // Use Gemini-only scraper (NO Puppeteer/Cheerio/Vision)
+    // Use Gemini-only scraper with template system (v5.0)
     const response = await fetch(`${FUNCTIONS_BASE_URL}/generateModernizedSite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sourceUrl: request.sourceUrl,
         businessName: request.businessName,
-        category: request.category
+        category: request.category,
+        templateId: request.templateId // Pass template for design variety
       })
     });
 
