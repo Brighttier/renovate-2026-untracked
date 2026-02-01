@@ -175,28 +175,63 @@ const AdminSettings: React.FC = () => {
           <p className="text-sm text-[#A8A3B3]">
             Click the button below to create or update the following products in Stripe:
           </p>
-          <ul className="mt-3 space-y-2 text-xs text-[#6B6478]">
-            <li className="flex items-center gap-2">
-              <Icons.Check size={14} className="text-[#9F8FD4]" />
-              <span><span className="text-white">Starter Plan</span> - $49/month (10 sites, 100 tokens)</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Icons.Check size={14} className="text-[#9F8FD4]" />
-              <span><span className="text-white">Growth Plan</span> - $149/month (50 sites, 500 tokens)</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Icons.Check size={14} className="text-[#9F8FD4]" />
-              <span><span className="text-white">Enterprise Plan</span> - $399/month (500 sites, 2000 tokens)</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Icons.Check size={14} className="text-purple-500" />
-              <span><span className="text-white">50 Edit Tokens</span> - $10 one-time</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Icons.Check size={14} className="text-purple-500" />
-              <span><span className="text-white">5 Site Generations</span> - $15 one-time</span>
-            </li>
-          </ul>
+
+          {/* Platform Subscriptions */}
+          <div className="mt-4">
+            <p className="text-xs text-[#9F8FD4] uppercase tracking-wider font-medium mb-2">Platform Subscriptions</p>
+            <ul className="space-y-2 text-xs text-[#6B6478]">
+              <li className="flex items-center gap-2">
+                <Icons.Check size={14} className="text-[#9F8FD4]" />
+                <span><span className="text-white">Starter Plan</span> - $49/month (10 sites, 100 tokens)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Icons.Check size={14} className="text-[#9F8FD4]" />
+                <span><span className="text-white">Growth Plan</span> - $149/month (50 sites, 500 tokens)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Icons.Check size={14} className="text-[#9F8FD4]" />
+                <span><span className="text-white">Enterprise Plan</span> - $399/month (500 sites, 2000 tokens)</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Token Top-ups */}
+          <div className="mt-4">
+            <p className="text-xs text-purple-500 uppercase tracking-wider font-medium mb-2">Token Top-ups</p>
+            <ul className="space-y-2 text-xs text-[#6B6478]">
+              <li className="flex items-center gap-2">
+                <Icons.Check size={14} className="text-purple-500" />
+                <span><span className="text-white">50 Edit Tokens</span> - $10 one-time</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Icons.Check size={14} className="text-purple-500" />
+                <span><span className="text-white">5 Site Generations</span> - $15 one-time</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Marketplace Services */}
+          <div className="mt-4">
+            <p className="text-xs text-emerald-500 uppercase tracking-wider font-medium mb-2">Marketplace Services (Auto-created on first purchase)</p>
+            <ul className="space-y-2 text-xs text-[#6B6478]">
+              <li className="flex items-center gap-2">
+                <Icons.Chatbot size={14} className="text-emerald-500" />
+                <span><span className="text-white">AI Chatbot</span> - $99 setup + $29/month</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Icons.Booking size={14} className="text-emerald-500" />
+                <span><span className="text-white">Booking Calendar</span> - $149 setup + $19/month</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Icons.CRM size={14} className="text-emerald-500" />
+                <span><span className="text-white">Lead Dashboard</span> - $49 setup + $9/month</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Icons.Sparkles size={14} className="text-emerald-500" />
+                <span><span className="text-white">Business Suite</span> - $199 setup + $49/month (all 3 services)</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Result Message */}

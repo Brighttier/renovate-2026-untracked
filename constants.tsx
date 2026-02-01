@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BusinessCategory, MarketplaceService, AdminTab, AIModel, APIScope, WebhookEventType, AuditAction, AuditResource } from './types';
+import { BusinessCategory, MarketplaceService, MarketplacePricing, MarketplaceServiceId, AdminTab, AIModel, APIScope, WebhookEventType, AuditAction, AuditResource } from './types';
 import { Icons } from './components/Icons';
 
 export const INFRA_COST_PER_SITE = 0.07; // Text + 4 Nano Banana Images
@@ -103,31 +103,90 @@ export const MARKETPLACE_SERVICES: MarketplaceService[] = [
   {
     id: 'chatbot',
     title: 'AI Support Agent',
-    description: 'We build a custom AI chatbot that handles bookings and questions.',
+    description: '24/7 AI chatbot that handles customer questions and captures leads.',
     platformFee: 49,
-    suggestedPrice: 199,
-    deliveryTime: '2 Days',
+    suggestedPrice: 99,  // Setup fee
+    deliveryTime: 'Instant',
     icon: 'Chatbot'
   },
-    {
+  {
     id: 'booking',
-    title: 'Advanced Booking',
-    description: 'Professional calendar and scheduling system integration.',
+    title: 'Booking Calendar',
+    description: 'Professional calendar and scheduling system for appointments.',
     platformFee: 89,
-    suggestedPrice: 299,
-    deliveryTime: '3 Days',
+    suggestedPrice: 149,  // Setup fee
+    deliveryTime: 'Instant',
     icon: 'Booking'
   },
   {
     id: 'simple-crm',
-    title: 'Business Dashboard',
-    description: 'A dedicated area for the owner to manage incoming leads.',
+    title: 'Lead Dashboard',
+    description: 'Track leads from chat, bookings, and forms in one place.',
     platformFee: 59,
-    suggestedPrice: 149,
-    deliveryTime: '2 Days',
+    suggestedPrice: 49,  // Setup fee
+    deliveryTime: 'Instant',
     icon: 'CRM'
   }
 ];
+
+// Marketplace Pricing with Setup Fee + Monthly Subscription
+export const MARKETPLACE_PRICING: Record<MarketplaceServiceId, MarketplacePricing> = {
+  chatbot: {
+    id: 'chatbot',
+    name: 'AI Support Agent',
+    setupFee: 99,
+    monthly: 29,
+    annual: 290,  // 2 months free
+    limits: {
+      messagesPerMonth: 500,
+    },
+    overage: {
+      enabled: true,
+      pricePerUnit: 0.02,  // $0.02 per message after 500
+      hardLimit: 2000
+    }
+  },
+  booking: {
+    id: 'booking',
+    name: 'Booking Calendar',
+    setupFee: 149,
+    monthly: 19,
+    annual: 190,
+    limits: {
+      appointmentsPerMonth: 'unlimited',
+    }
+  },
+  'simple-crm': {
+    id: 'simple-crm',
+    name: 'Lead Dashboard',
+    setupFee: 49,
+    monthly: 9,
+    annual: 90,
+    limits: {
+      leadsPerMonth: 'unlimited',
+      forms: 5
+    }
+  },
+  bundle: {
+    id: 'bundle',
+    name: 'Business Suite',
+    setupFee: 199,  // Save $98 vs individual
+    monthly: 49,    // Save $8/mo
+    annual: 490,
+    limits: {
+      messagesPerMonth: 500,
+      appointmentsPerMonth: 'unlimited',
+      leadsPerMonth: 'unlimited',
+      forms: 10
+    },
+    overage: {
+      enabled: true,
+      pricePerUnit: 0.02,
+      hardLimit: 2000
+    },
+    includes: ['chatbot', 'booking', 'simple-crm']
+  }
+};
 
 // ==========================================
 // COMMAND CENTER CONSTANTS (Platform Admin)

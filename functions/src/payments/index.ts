@@ -12,6 +12,14 @@ import {
     PLATFORM_PLANS,
     TOPUP_PACKS
 } from '../config/stripe';
+import {
+    generateChatbotWidget,
+    generateBookingWidget,
+    generateCRMWidget,
+    injectWidgetIntoHtml,
+    removeWidgetFromHtml,
+} from '../marketplace/widgetGenerators';
+import type { MarketplaceServiceId } from '../../../types';
 
 const db = admin.firestore();
 
@@ -170,6 +178,338 @@ async function addTokensToUser(userId: string, tokens: number, tokenType: 'edit'
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
         }
+    }
+}
+
+// ============================================
+// MARKETPLACE HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Handle marketplace subscription purchase
+ * Deploys widget to the client's website
+ */
+async function handleMarketplacePurchase(
+    session: Stripe.Checkout.Session,
+    subscription: Stripe.Subscription
+): Promise<void> {
+    const { orderId, userId, leadId, siteId, serviceId, businessName } = session.metadata || {};
+
+    if (!orderId || !userId || !leadId || !siteId || !serviceId) {
+        console.error('[MarketplaceWebhook] Missing required metadata');
+        return;
+    }
+
+    console.log(`[MarketplaceWebhook] Processing purchase for order: ${orderId}, service: ${serviceId}`);
+
+    try {
+        // 1. Update order status to 'paid'
+        await db.collection('marketplace_orders').doc(orderId).update({
+            status: 'deploying',
+            stripeSubscriptionId: subscription.id,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // 2. Get the lead and site data
+        const leadDoc = await db.collection('leads').doc(leadId).get();
+        if (!leadDoc.exists) {
+            throw new Error(`Lead not found: ${leadId}`);
+        }
+        const lead = leadDoc.data();
+
+        // 3. Get current HTML from pending_deployments or hosting
+        let currentHtml = '';
+        const pendingDeployDoc = await db.collection('pending_deployments').doc(orderId).get();
+        if (pendingDeployDoc.exists) {
+            currentHtml = pendingDeployDoc.data()?.html || '';
+        } else if (lead?.hosting?.deployedHtml) {
+            currentHtml = lead.hosting.deployedHtml;
+        } else if (lead?.blueprint?.html) {
+            currentHtml = lead.blueprint.html;
+        }
+
+        if (!currentHtml) {
+            console.warn('[MarketplaceWebhook] No HTML found for site, skipping widget injection');
+            await db.collection('marketplace_orders').doc(orderId).update({
+                status: 'deployed',
+                deployedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                note: 'Widget injection skipped - no HTML available',
+            });
+            return;
+        }
+
+        // 4. Get business info for widget generation
+        const siteIdentity = lead?.siteIdentity || {};
+        const primaryColor = siteIdentity.primaryColors?.[0] || '#10b981';
+        const widgetOptions = {
+            siteId,
+            businessName: businessName || siteIdentity.businessName || 'Business',
+            primaryColor,
+            accentColor: siteIdentity.accentColor || primaryColor,
+        };
+
+        // 5. Generate widget code
+        let widgetCode = '';
+        switch (serviceId as MarketplaceServiceId) {
+            case 'chatbot':
+                widgetCode = generateChatbotWidget(widgetOptions);
+                break;
+            case 'booking':
+                widgetCode = generateBookingWidget(widgetOptions);
+                break;
+            case 'simple-crm':
+                widgetCode = generateCRMWidget(widgetOptions);
+                break;
+            case 'bundle':
+                // For bundle, inject all three widgets
+                widgetCode = generateChatbotWidget(widgetOptions) +
+                    '\n' + generateBookingWidget(widgetOptions) +
+                    '\n' + generateCRMWidget(widgetOptions);
+                break;
+        }
+
+        // 6. Inject widget into HTML
+        let updatedHtml = currentHtml;
+        if (serviceId === 'bundle') {
+            updatedHtml = injectWidgetIntoHtml(updatedHtml, generateChatbotWidget(widgetOptions), 'chatbot');
+            updatedHtml = injectWidgetIntoHtml(updatedHtml, generateBookingWidget(widgetOptions), 'booking');
+            updatedHtml = injectWidgetIntoHtml(updatedHtml, generateCRMWidget(widgetOptions), 'simple-crm');
+        } else {
+            updatedHtml = injectWidgetIntoHtml(updatedHtml, widgetCode, serviceId as 'chatbot' | 'booking' | 'simple-crm');
+        }
+
+        // 7. Create marketplace subscription record
+        await db.collection('marketplace_subscriptions').doc(`${siteId}_${serviceId}`).set({
+            siteId,
+            leadId,
+            userId,
+            serviceId,
+            stripeSubscriptionId: subscription.id,
+            status: 'active',
+            currentPeriodStart: new Date((subscription as any).current_period_start * 1000).toISOString(),
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString(),
+            cancelAtPeriodEnd: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // 8. Create service config (chatbot/booking/crm)
+        await seedServiceConfig(siteId, userId, serviceId as MarketplaceServiceId, siteIdentity);
+
+        // 9. Update order status
+        await db.collection('marketplace_orders').doc(orderId).update({
+            status: 'deployed',
+            deployedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // 10. Update lead with deployed HTML and service info
+        await leadDoc.ref.update({
+            'blueprint.html': updatedHtml,
+            [`services.${serviceId}`]: {
+                enabled: true,
+                activatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                subscriptionId: subscription.id,
+            },
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // 11. Clean up pending deployment
+        if (pendingDeployDoc.exists) {
+            await pendingDeployDoc.ref.delete();
+        }
+
+        console.log(`[MarketplaceWebhook] Successfully deployed ${serviceId} for order: ${orderId}`);
+    } catch (error: any) {
+        console.error('[MarketplaceWebhook] Error processing purchase:', error);
+
+        // Update order status to failed
+        await db.collection('marketplace_orders').doc(orderId).update({
+            status: 'failed',
+            error: error.message,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+    }
+}
+
+/**
+ * Seed service configuration based on business type
+ */
+async function seedServiceConfig(
+    siteId: string,
+    userId: string,
+    serviceId: MarketplaceServiceId,
+    siteIdentity: any
+): Promise<void> {
+    const businessName = siteIdentity.businessName || 'Business';
+    const primaryColor = siteIdentity.primaryColors?.[0] || '#10b981';
+    const services = siteIdentity.services || [];
+    const businessHours = siteIdentity.businessHours || 'Mon-Fri 9am-5pm';
+
+    switch (serviceId) {
+        case 'chatbot':
+            await db.collection('chatbotConfig').doc(siteId).set({
+                siteId,
+                userId,
+                enabled: true,
+                settings: {
+                    welcomeMessage: `Hi! 👋 Welcome to ${businessName}. How can I help you today?`,
+                    systemPrompt: `You are a helpful assistant for ${businessName}. Be friendly, concise, and helpful. Services offered: ${services.join(', ')}. Business hours: ${businessHours}.`,
+                    primaryColor,
+                    position: 'bottom-right',
+                    collectEmail: true,
+                },
+                knowledgeBase: `Business: ${businessName}\nServices: ${services.join(', ')}\nHours: ${businessHours}`,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            break;
+
+        case 'booking':
+            await db.collection('bookingConfig').doc(siteId).set({
+                siteId,
+                userId,
+                enabled: true,
+                settings: {
+                    timezone: 'America/New_York',
+                    bufferMinutes: 15,
+                    minNoticeHours: 24,
+                    maxAdvanceDays: 30,
+                    confirmationEmail: true,
+                    reminderEmail: true,
+                },
+                eventTypes: [
+                    { id: 'consultation', name: 'Consultation', duration: 30, price: 0, isActive: true },
+                    { id: 'service', name: 'Service Appointment', duration: 60, price: null, isActive: true },
+                ],
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            break;
+
+        case 'simple-crm':
+            await db.collection('crmConfig').doc(siteId).set({
+                siteId,
+                userId,
+                enabled: true,
+                settings: {
+                    notifyOnSubmission: true,
+                    notifyEmail: '',  // Will use user's email
+                    autoResponse: true,
+                    autoResponseMessage: `Thank you for contacting ${businessName}! We'll get back to you within 24 hours.`,
+                },
+                forms: [{
+                    id: 'contact',
+                    name: 'Contact Form',
+                    isActive: true,
+                }],
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            break;
+
+        case 'bundle':
+            // Seed all three configs
+            await seedServiceConfig(siteId, userId, 'chatbot', siteIdentity);
+            await seedServiceConfig(siteId, userId, 'booking', siteIdentity);
+            await seedServiceConfig(siteId, userId, 'simple-crm', siteIdentity);
+            break;
+    }
+}
+
+/**
+ * Handle marketplace subscription cancellation
+ */
+async function handleMarketplaceCancellation(subscription: Stripe.Subscription): Promise<void> {
+    const { siteId, serviceId, leadId } = subscription.metadata || {};
+
+    if (!siteId || !serviceId) {
+        console.log('[MarketplaceWebhook] Not a marketplace subscription, skipping');
+        return;
+    }
+
+    console.log(`[MarketplaceWebhook] Processing cancellation for site: ${siteId}, service: ${serviceId}`);
+
+    try {
+        // 1. Update subscription status
+        await db.collection('marketplace_subscriptions').doc(`${siteId}_${serviceId}`).update({
+            status: 'cancelled',
+            cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // 2. Disable service config
+        const configCollection = serviceId === 'chatbot' ? 'chatbotConfig'
+            : serviceId === 'booking' ? 'bookingConfig'
+            : 'crmConfig';
+
+        await db.collection(configCollection).doc(siteId).update({
+            enabled: false,
+            disabledAt: admin.firestore.FieldValue.serverTimestamp(),
+            disabledReason: 'subscription_cancelled',
+        });
+
+        // 3. Remove widget from site HTML (optional - could leave it but disable backend)
+        if (leadId) {
+            const leadDoc = await db.collection('leads').doc(leadId).get();
+            if (leadDoc.exists) {
+                const lead = leadDoc.data();
+                let html = lead?.blueprint?.html || '';
+
+                if (html && serviceId !== 'bundle') {
+                    html = removeWidgetFromHtml(html, serviceId as 'chatbot' | 'booking' | 'simple-crm');
+                    await leadDoc.ref.update({
+                        'blueprint.html': html,
+                        [`services.${serviceId}.enabled`]: false,
+                        [`services.${serviceId}.cancelledAt`]: admin.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+                }
+            }
+        }
+
+        console.log(`[MarketplaceWebhook] Successfully cancelled ${serviceId} for site: ${siteId}`);
+    } catch (error: any) {
+        console.error('[MarketplaceWebhook] Error processing cancellation:', error);
+    }
+}
+
+/**
+ * Handle marketplace subscription renewal
+ */
+async function handleMarketplaceRenewal(subscription: Stripe.Subscription): Promise<void> {
+    const { siteId, serviceId } = subscription.metadata || {};
+
+    if (!siteId || !serviceId) {
+        return;
+    }
+
+    console.log(`[MarketplaceWebhook] Processing renewal for site: ${siteId}, service: ${serviceId}`);
+
+    try {
+        // Update subscription period
+        await db.collection('marketplace_subscriptions').doc(`${siteId}_${serviceId}`).update({
+            currentPeriodStart: new Date((subscription as any).current_period_start * 1000).toISOString(),
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Reset monthly usage counters
+        const period = new Date().toISOString().slice(0, 7); // "2025-02"
+        await db.collection('service_usage').doc(`${siteId}_${serviceId}_${period}`).set({
+            siteId,
+            serviceId,
+            period,
+            usage: {
+                messagesReceived: 0,
+                messagesAI: 0,
+                appointmentsBooked: 0,
+                formsSubmitted: 0,
+            },
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`[MarketplaceWebhook] Successfully renewed ${serviceId} for site: ${siteId}`);
+    } catch (error: any) {
+        console.error('[MarketplaceWebhook] Error processing renewal:', error);
     }
 }
 
@@ -586,6 +926,16 @@ export const stripeWebhook = onRequest(
                         break;
                     }
 
+                    // Check if this is a marketplace purchase
+                    if (session.metadata?.type === 'marketplace') {
+                        console.log('[Webhook] Processing marketplace checkout');
+                        const subscription = await stripe.subscriptions.retrieve(
+                            session.subscription as string
+                        );
+                        await handleMarketplacePurchase(session, subscription);
+                        break;
+                    }
+
                     if (session.mode === 'subscription') {
                         // Subscription checkout completed
                         const subscription = await stripe.subscriptions.retrieve(
@@ -630,11 +980,17 @@ export const stripeWebhook = onRequest(
                         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
                         const userId = subscription.metadata?.userId;
 
+                        // Check if this is a marketplace subscription renewal
+                        if (subscription.metadata?.type === 'marketplace' && invoice.billing_reason === 'subscription_cycle') {
+                            console.log('[Webhook] Processing marketplace renewal');
+                            await handleMarketplaceRenewal(subscription);
+                        }
+
                         if (userId) {
                             await updateSubscriptionInFirestore(userId, subscription);
 
                             // For recurring payments (not the first one), refresh tokens
-                            if (invoice.billing_reason === 'subscription_cycle') {
+                            if (invoice.billing_reason === 'subscription_cycle' && !subscription.metadata?.type) {
                                 const planId = subscription.metadata?.planId || subscription.items.data[0]?.price?.metadata?.plan_id;
                                 const plan = getPlanDetails(planId || '');
                                 if (plan) {
@@ -700,6 +1056,13 @@ export const stripeWebhook = onRequest(
                 case 'customer.subscription.deleted': {
                     const subscription = event.data.object as Stripe.Subscription;
                     const userId = subscription.metadata?.userId;
+
+                    // Check if this is a marketplace subscription cancellation
+                    if (subscription.metadata?.type === 'marketplace') {
+                        console.log('[Webhook] Processing marketplace subscription deletion');
+                        await handleMarketplaceCancellation(subscription);
+                        break;
+                    }
 
                     if (userId) {
                         // Update subscription status

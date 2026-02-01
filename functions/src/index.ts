@@ -26,3 +26,32 @@ export {
 // ============================================================================
 
 export { setupAdmin } from './setup/createAdmin';
+
+// ============================================================================
+// PAYMENT FUNCTIONS
+// ============================================================================
+
+export {
+  initializeStripeProducts,
+  createCheckoutSession,
+  createCustomerPortalSession,
+  getPaymentHistory,
+  cancelSubscription,
+  resumeSubscription,
+  getSubscriptionStatus,
+  getAvailablePlans,
+  stripeWebhook,
+} from './payments/index';
+
+// ============================================================================
+// MARKETPLACE FUNCTIONS (Chatbot, Booking, CRM)
+// ============================================================================
+
+export {
+  createMarketplaceCheckout,
+  cancelMarketplaceService,
+  reactivateMarketplaceService,
+  getMarketplaceSubscriptions,
+} from './marketplace/checkout';
+
+export { exportServiceData } from './marketplace/export';

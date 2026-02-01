@@ -1006,6 +1006,328 @@ export interface MarketplaceService {
   icon: string;
 }
 
+// ==========================================
+// MARKETPLACE SUBSCRIPTION TYPES
+// ==========================================
+
+export type MarketplaceServiceId = 'chatbot' | 'booking' | 'simple-crm' | 'bundle';
+
+export interface MarketplacePricing {
+  id: MarketplaceServiceId;
+  name: string;
+  setupFee: number;
+  monthly: number;
+  annual: number;
+  limits: {
+    messagesPerMonth?: number | 'unlimited';
+    appointmentsPerMonth?: number | 'unlimited';
+    leadsPerMonth?: number | 'unlimited';
+    forms?: number;
+  };
+  overage?: {
+    enabled: boolean;
+    pricePerUnit: number;
+    hardLimit: number;
+  };
+  includes?: MarketplaceServiceId[];
+}
+
+export interface MarketplaceOrder {
+  id: string;
+  userId: string;
+  leadId: string;
+  siteId: string;
+  serviceId: MarketplaceServiceId;
+  serviceName: string;
+  setupFee: number;
+  monthlyFee: number;
+  status: 'pending' | 'paid' | 'deploying' | 'deployed' | 'failed' | 'cancelled';
+  stripeSessionId?: string;
+  stripeSubscriptionId?: string;
+  stripePaymentId?: string;
+  deployedAt?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceCheckoutRequest {
+  serviceId: MarketplaceServiceId;
+  leadId: string;
+  siteId: string;
+  businessName: string;
+  successUrl: string;
+  cancelUrl: string;
+}
+
+export interface MarketplaceSubscription {
+  id: string;
+  userId: string;
+  siteId: string;
+  serviceId: MarketplaceServiceId;
+  stripeSubscriptionId: string;
+  status: 'active' | 'past_due' | 'cancelled' | 'trialing';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceUsage {
+  siteId: string;
+  serviceId: MarketplaceServiceId;
+  period: string;  // "2025-02" format
+  usage: {
+    messagesReceived?: number;
+    messagesAI?: number;
+    tokensUsed?: number;
+    appointmentsBooked?: number;
+    remindersSent?: number;
+    formsSubmitted?: number;
+    leadsCreated?: number;
+  };
+  limits: {
+    messagesIncluded?: number;
+    overageEnabled?: boolean;
+    overageRate?: number;
+  };
+  overageCharges: number;
+  updatedAt: string;
+}
+
+// Service Cancellation
+export interface ServiceCancellation {
+  siteId: string;
+  serviceId: MarketplaceServiceId;
+  userId: string;
+  stripeSubscriptionId: string;
+  cancelAt: 'period_end' | 'immediately';
+  reason?: string;
+  dataExported: boolean;
+  status: 'pending' | 'cancelled' | 'reactivated';
+  cancelledAt: string;
+  effectiveDate: string;
+}
+
+// Data Export
+export interface DataExportRequest {
+  siteId: string;
+  serviceId: MarketplaceServiceId;
+  dataTypes: string[];
+  dateRange?: {
+    from: string;
+    to: string;
+  };
+  format: 'csv' | 'excel' | 'json' | 'ical';
+}
+
+export interface DataExportResult {
+  downloadUrl: string;
+  filename: string;
+  expiresIn: string;
+}
+
+// ==========================================
+// CHATBOT SERVICE TYPES
+// ==========================================
+
+export interface ChatbotConfig {
+  siteId: string;
+  userId: string;
+  enabled: boolean;
+  settings: {
+    welcomeMessage: string;
+    systemPrompt: string;
+    primaryColor: string;
+    position: 'bottom-right' | 'bottom-left';
+    collectEmail: boolean;
+    collectPhone: boolean;
+    businessHours?: { start: string; end: string };
+    quickReplies?: string[];
+  };
+  knowledgeBase: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  siteId: string;
+  visitorId: string;
+  status: 'active' | 'closed';
+  messageCount: number;
+  startedAt: string;
+  lastMessageAt: string;
+  visitorEmail?: string;
+  visitorName?: string;
+  summary?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  role: 'visitor' | 'ai' | 'human';
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatVisitor {
+  id: string;
+  siteId: string;
+  email?: string;
+  phone?: string;
+  name?: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  totalConversations: number;
+  totalMessages: number;
+}
+
+// ==========================================
+// BOOKING SERVICE TYPES
+// ==========================================
+
+export interface BookingConfig {
+  siteId: string;
+  userId: string;
+  enabled: boolean;
+  settings: {
+    timezone: string;
+    bufferMinutes: number;
+    minNoticeHours: number;
+    maxAdvanceDays: number;
+    confirmationEmail: boolean;
+    reminderEmail: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BookingEventType {
+  id: string;
+  siteId: string;
+  name: string;
+  duration: number;
+  price?: number;
+  description: string;
+  color: string;
+  isActive: boolean;
+}
+
+export interface WeeklyAvailability {
+  siteId: string;
+  schedule: {
+    monday: { start: string; end: string }[];
+    tuesday: { start: string; end: string }[];
+    wednesday: { start: string; end: string }[];
+    thursday: { start: string; end: string }[];
+    friday: { start: string; end: string }[];
+    saturday: { start: string; end: string }[];
+    sunday: { start: string; end: string }[];
+  };
+  blockedDates: string[];
+}
+
+export interface BookingAppointment {
+  id: string;
+  siteId: string;
+  eventTypeId: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  startTime: string;
+  endTime: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no-show';
+  notes?: string;
+  confirmationCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BookingClient {
+  id: string;
+  siteId: string;
+  email: string;
+  phone?: string;
+  name: string;
+  totalAppointments: number;
+  completedAppointments: number;
+  noShows: number;
+  createdAt: string;
+  lastBookedAt?: string;
+}
+
+// ==========================================
+// CRM SERVICE TYPES
+// ==========================================
+
+export interface CRMConfig {
+  siteId: string;
+  userId: string;
+  enabled: boolean;
+  settings: {
+    notifyOnSubmission: boolean;
+    notifyEmail: string;
+    autoResponse: boolean;
+    autoResponseMessage?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CRMForm {
+  id: string;
+  siteId: string;
+  name: string;
+  fields: CRMFormField[];
+  submitButtonText: string;
+  successMessage: string;
+  isActive: boolean;
+}
+
+export interface CRMFormField {
+  id: string;
+  type: 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'checkbox' | 'date';
+  label: string;
+  placeholder?: string;
+  required: boolean;
+  options?: string[];
+}
+
+export interface FormSubmission {
+  id: string;
+  siteId: string;
+  formId: string;
+  data: Record<string, any>;
+  source: {
+    pageUrl: string;
+    referrer?: string;
+    timestamp: string;
+  };
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CRMLead {
+  id: string;
+  siteId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  source: 'form' | 'chatbot' | 'booking' | 'manual';
+  sourceId?: string;
+  status: 'new' | 'contacted' | 'qualified' | 'won' | 'lost';
+  value?: number;
+  notes: string[];
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  lastContactedAt?: string;
+}
+
 export enum ProposalChannel {
   EMAIL = 'email',
   LINK = 'link'
